@@ -184,7 +184,7 @@ export default function StatisticsPage() {
       <View className='fm-card'>
         <View className='fm-row fm-row--between fm-section-head'>
           <Text className='fm-title'>按餐次分布</Text>
-          <Text className='fm-tertiary'>日均按区间天数计</Text>
+          <Text className='fm-tertiary'>日均按有记录天数计</Text>
         </View>
         {totalCalories > 0 ? (
           MEAL_ORDER.map((mealType) => {
