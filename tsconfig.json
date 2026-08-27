@@ -9,7 +9,6 @@
     "noImplicitAny": false,
     // 不校验三方库自带的 .d.ts（@tarojs/components 声明文件内部有 100+ 条错误，会淹没本项目报错）
     "skipLibCheck": true,
-    "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "lib",
     "noUnusedLocals": true,
