@@ -69,8 +69,20 @@ export default function RecordEditPage() {
   const router = useRouter()
   // 新增时路由不带 id，此时 Number(undefined) 是 NaN，归为 null
   const expectedId = Number(router.params.id)
-  const [draft] = useState(() => takeDraft(Number.isFinite(expectedId) ? expectedId : null))
+  const routeId = Number.isFinite(expectedId) ? expectedId : null
+  const [draft] = useState(() => takeDraft(routeId))
+
+  /**
+   * 路由带着 id 却没读到草稿 —— 编辑态不可用，必须挡住而不是退化成新增。
+   *
+   * 为什么这是严重问题：草稿是「读后即清」的（takeDraft），用户进过编辑页又返回、
+   * 或上一跳 navigateTo 失败把草稿留在本地导致 id 不匹配，都会走到这里。
+   * 以前 isEdit 完全由「草稿是否读到」推导，于是这些场景下页面变成一张空表单，
+   * 用户以为在改，实际点保存是 POST 新建一条重复记录（静默污染数据）。
+   */
+  const draftMissing = routeId != null && draft == null
   const isEdit = typeof draft?.id === 'number'
+  const editId = isEdit ? (draft as DietRecordResponse).id : routeId
   const [dateText, setDateText] = useState(draft?.recordDate ?? todayStr())
   const [mealIndex, setMealIndex] = useState(() => {
     const index = MEAL_ORDER.indexOf(draft?.mealType as MealType)
@@ -82,6 +94,12 @@ export default function RecordEditPage() {
     typeof draft?.calories === 'number' ? String(draft.calories) : ''
   )
   const [remark, setRemark] = useState(draft?.remark ?? '')
+  /**
+   * 编辑态下「进来的时候备注是什么」。
+   * 用于区分备注框留空到底是「不改」还是「要清空」——
+   * 后端只认 null=不改、空串=清空，光看当前输入值分不出来。
+   */
+  const [initialRemark] = useState(() => draft?.remark ?? '')
   const [submitting, setSubmitting] = useState(false)
 
   // 同一页面承担新增与编辑两种形态，导航标跟着切换，避免用户不确定自己在改哪条
@@ -141,12 +159,17 @@ export default function RecordEditPage() {
       mealType,
       foodName: name,
       calories,
+      // 创建接口没有「保持原值」语义，空备注直接不传
       remark: remarkText || undefined
     }
   }
 
   async function handleSubmit() {
     if (submitting) {
+      return
+    }
+    if (draftMissing) {
+      await closeEditor()
       return
     }
     const values = buildValues()
@@ -160,13 +183,17 @@ export default function RecordEditPage() {
 
     setSubmitting(true)
     try {
-      if (isEdit && draft?.id != null) {
+      if (isEdit && editId != null) {
         // 后端更新接口不接受 recordDate，所以编辑态只提交可改字段
-        await updateDietRecord(draft.id, {
+        await updateDietRecord(editId, {
           mealType: values.mealType,
           foodName: values.foodName,
           calories: values.calories,
-          remark: values.remark
+          // 备注框被清空、且进来时本来有内容 → 显式发空串表示「清空」。
+          // 不能发 undefined：JSON.stringify 会丢掉该键，后端当成「不改」，
+          // 于是备注永远清不掉（实测省略键与传 null 都改不动原值）。
+          remark:
+            !values.remark && initialRemark ? '' : values.remark
         })
       } else {
         await createDietRecord(values)
@@ -182,12 +209,12 @@ export default function RecordEditPage() {
   }
 
   async function handleDelete() {
-    if (submitting || draft?.id == null) {
+    if (submitting || editId == null) {
       return
     }
     const confirmed = await confirm(
       '删除记录',
-      `确定删除「${draft.foodName ?? '这条记录'}」吗？删除后不可恢复。`,
+      `确定删除「${draft?.foodName ?? '这条记录'}」吗？删除后不可恢复。`,
       '删除'
     )
     if (!confirmed) {
@@ -195,7 +222,7 @@ export default function RecordEditPage() {
     }
     setSubmitting(true)
     try {
-      await deleteDietRecord(draft.id)
+      await deleteDietRecord(editId)
       await closeEditor()
       toastSuccess('已删除')
     } catch (error) {
@@ -210,6 +237,24 @@ export default function RecordEditPage() {
     const current = Number(caloriesText.trim())
     const base = Number.isFinite(current) && current > 0 ? current : 0
     setCaloriesText(String(base + step))
+  }
+
+  if (draftMissing) {
+    return (
+      <View className='fm-page edit-page'>
+        <View className='fm-card draft-lost'>
+          <View className='draft-lost__icon'>⚠️</View>
+          <View className='draft-lost__title'>这条记录的数据已失效</View>
+          <View className='fm-weak draft-lost__desc'>
+            编辑需要先拿到原记录内容（后端没有单条查询接口），本地草稿已不在，
+            为避免把「修改」记成「新增一条重复记录」，这里不再提供表单。
+          </View>
+          <View className='fm-btn fm-btn--primary draft-lost__btn' onClick={closeEditor}>
+            返回记录列表
+          </View>
+        </View>
+      </View>
+    )
   }
 
   return (
@@ -329,6 +374,7 @@ export default function RecordEditPage() {
           删除这条记录
         </View>
       ) : null}
+
 
       <View className='edit-actionbar'>
         <Button

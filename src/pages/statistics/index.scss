@@ -22,7 +22,7 @@
 .range-tabs__item--active {
   background: var(--fm-hero);
   box-shadow: 0 6px 18px rgba(31, 111, 84, 0.28);
-  color: #fff;
+  color: var(--fm-on-primary);
   font-weight: 600;
 }
 

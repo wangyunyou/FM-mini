@@ -19,8 +19,10 @@ export const ERROR_CODE = {
   NO_PERMISSION: 1003,
   /** 饮食记录不存在 */
   DIET_RECORD_NOT_FOUND: 2001,
-  /** 日期范围不合法（开始日期晚于结束日期） */
+  /** 日期范围不合法（开始日期晚于结束日期 / 结束日期在未来） */
   DIET_DATE_INVALID: 2002,
+  /** 查询跨度超限（接口无分页，跨度 = 一次返回的行数上限） */
+  DIET_DATE_RANGE_TOO_LONG: 2003,
   /** 微信登录失败 */
   WX_LOGIN_FAILED: 3001,
   /** 微信接口调用异常 */

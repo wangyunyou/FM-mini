@@ -114,3 +114,35 @@
   right: 0;
   z-index: 20;
 }
+
+/* 草稿丢失（路由带 id 但本地没有原记录）时的兜底页：
+   只给返回入口，不给表单，避免把「修改」误提交成「新增一条重复记录」 */
+.draft-lost {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.draft-lost__icon {
+  font-size: 64px;
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.draft-lost__title {
+  color: var(--fm-text);
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.draft-lost__desc {
+  font-size: 24px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.draft-lost__btn {
+  width: auto;
+}

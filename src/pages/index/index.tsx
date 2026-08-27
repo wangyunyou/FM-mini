@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
@@ -50,8 +50,17 @@ export default function IndexPage() {
   const [weekCalories, setWeekCalories] = useState(0)
   const [loading, setLoading] = useState(false)
 
+  /**
+   * 请求序号：只接受最后一次 loadData 的结果。
+   *
+   * 下拉刷新、useDidShow（切 tab / 从编辑页返回）可能并发触发两次加载，
+   * 先发的那次后返回就会把旧结果盖到新结果上。
+   */
+  const requestSeqRef = useRef(0)
+
   /** 拉取「今日」与「本周」两份统计：后端只有一个区间查询接口，用两个区间复用。 */
   const loadData = useCallback(async () => {
+    const seq = ++requestSeqRef.current
     setLoading(true)
     const dateText = todayStr()
     try {
@@ -59,18 +68,26 @@ export default function IndexPage() {
         queryDietRecords(singleDayRange(dateText)),
         queryDietRecords(currentWeekRange())
       ])
+      if (seq !== requestSeqRef.current) {
+        return
+      }
       // 后端字段可能缺失（例如新用户），全部判空后再落到 state
       setRecords(todayStats?.records ?? [])
       setTodayCalories(todayStats?.totalCalories ?? 0)
       setWeekCalories(weekStats?.totalCalories ?? 0)
     } catch (error) {
+      if (seq !== requestSeqRef.current) {
+        return
+      }
       // request 层已经提示过，这里只清掉旧数据，避免把上一次的结果当成今日结果
       console.error('[index] 加载今日数据失败:', error)
       setRecords([])
       setTodayCalories(0)
       setWeekCalories(0)
     } finally {
-      setLoading(false)
+      if (seq === requestSeqRef.current) {
+        setLoading(false)
+      }
     }
   }, [])
 

@@ -42,7 +42,7 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.18);
   border-radius: 28px;
-  color: #fff;
+  color: var(--fm-on-primary);
   display: flex;
   font-size: 38px;
   font-weight: 700;
@@ -55,7 +55,7 @@
 }
 
 .login-hero__title {
-  color: #fff;
+  color: var(--fm-on-primary);
   font-size: 54px;
   font-weight: 700;
   letter-spacing: -1px;

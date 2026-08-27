@@ -7,7 +7,8 @@ import Taro from '@tarojs/taro'
 
 import { loginByWechat } from '@/api/user'
 import { ROUTES } from '@/constants/route'
-import type { LoginResponse, UserInfoResponse } from '@/types/api'
+import type { LoginResponse, UserInfoResponse, WxLoginRequest } from '@/types/api'
+
 import { toast } from '@/utils/feedback'
 import { readStorage, removeStorage, STORAGE_KEYS, writeStorage } from '@/utils/storage'
 
@@ -24,6 +25,18 @@ export function getToken(): string {
  */
 export function hasLocalSession(): boolean {
   return Boolean(getToken())
+}
+
+/**
+ * 是否首次登录（本地从未存过 token）。
+ *
+ * 为什么要把这个判断收在这里：后端的 nickname/avatarUrl/gender 只在首次注册时受理，
+ * 而微信现在只能拿到固定默认昵称（"微信用户"）。如果每次登录都当作新用户上报，
+ * 用户自己在「我的」页改过的名字会被刷回默认值（实测复现过）。
+ * 必须在写入新 token 之前调用，否则永远返回 false。
+ */
+export function isFirstLogin(): boolean {
+  return !hasLocalSession()
 }
 
 export function getCachedUserInfo(): UserInfoResponse | null {
@@ -48,12 +61,12 @@ async function fetchWxCode(): Promise<string> {
 /**
  * 完整登录流程：wx.login 取 code → 后端换 JWT → 落盘。
  *
- * @param profile 可选的初始昵称/性别，登录时一并提交，省一次编辑请求
+ * @param profile 可选的初始资料（昵称/头像/性别）与 isNewUser 标记，登录时一并提交，省一次编辑请求。
+ *   类型直接复用后端的 WxLoginRequest（去掉 code），避免这里另写一份字段清单跟 DTO 走偏。
  */
-export async function login(profile?: {
-  nickname?: string
-  gender?: number
-}): Promise<LoginResponse> {
+export async function login(
+  profile?: Omit<WxLoginRequest, 'code'>
+): Promise<LoginResponse> {
   const code = await fetchWxCode()
   const data = await loginByWechat({ code, ...profile }, { silent: true })
   if (!data?.token) {

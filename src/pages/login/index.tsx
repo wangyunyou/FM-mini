@@ -6,7 +6,7 @@ import Taro from '@tarojs/taro'
 import { ROUTES } from '@/constants/route'
 import { NICKNAME_MAX } from '@/constants/validation'
 import { GENDER_OPTIONS, genderByIndex } from '@/constants/user'
-import { login } from '@/utils/auth'
+import { isFirstLogin, login } from '@/utils/auth'
 import { toast, toastSuccess } from '@/utils/feedback'
 
 import './index.scss'
@@ -29,9 +29,14 @@ export default function LoginPage() {
 
     setSubmitting(true)
     try {
+      // 必须在 login() 写入新 token 之前问「是不是首登」，否则永远是 false。
+      // 注意这只是给后端对账的提示：后端以「自己有没有真的建号」为准决定是否写入昵称，
+      // 因为 token 被清（401/1002/退出登录）后，老用户重登时这里也会是 true。
+      const isNewUser = isFirstLogin()
       const result = await login({
         nickname: trimmed || undefined,
-        gender: genderByIndex(genderIndex)
+        gender: genderByIndex(genderIndex),
+        isNewUser
       })
       // 先跳转再提示，否则 reLaunch 会把手上的 toast 一起关掉
       await Taro.reLaunch({ url: ROUTES.HOME })

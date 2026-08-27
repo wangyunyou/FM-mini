@@ -100,6 +100,18 @@ export function daysElapsedInWeek(now: Date = new Date()): number {
   return ((now.getDay() + 6) % 7) + 1
 }
 
+/**
+ * 以某个日期串为基准偏移 days 天（负数往前），返回 'yyyy-MM-dd'。
+ * 基准串非法时原样返回，交给调用方判空。
+ */
+export function shiftDate(dateText: string, days: number): string {
+  const base = parseDate(dateText)
+  if (!base) {
+    return dateText
+  }
+  return formatDate(addDays(base, days))
+}
+
 /** 单天区间。 */
 export function singleDayRange(dateText: string): DateRange {
   return { startDate: dateText, endDate: dateText }

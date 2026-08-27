@@ -20,6 +20,9 @@ page {
   --fm-surface: #fff;
   --fm-surface-muted: #f6f8f7;
   --fm-border: #e8ecea;
+  /* 深色底（hero / 主按钮 / tabBar 白）之上的前景色：
+     以前三处页面 scss 里散写了 #fff，违反"色值只在本文件定义一份"，统一收进变量 */
+  --fm-on-primary: #fff;
 
   /* 尺度 */
   --fm-radius-lg: 28px;
@@ -127,7 +130,7 @@ page {
   background: var(--fm-hero);
   border-radius: var(--fm-radius-lg);
   box-shadow: 0 14px 36px rgba(31, 111, 84, 0.24);
-  color: #fff;
+  color: var(--fm-on-primary);
   margin-bottom: 28px;
   padding: 40px 36px 36px;
   position: relative;
@@ -153,7 +156,7 @@ page {
 }
 
 .fm-hero .fm-num {
-  color: #fff;
+  color: var(--fm-on-primary);
 }
 
 .fm-hero .fm-unit {
@@ -208,7 +211,7 @@ page {
 }
 
 .fm-progress__fill {
-  background-color: #fff;
+  background-color: var(--fm-on-primary);
   border-radius: 999px;
   height: 100%;
   transition: width 0.35s ease;
@@ -330,7 +333,7 @@ page {
   background: var(--fm-hero);
   border-color: transparent;
   box-shadow: 0 10px 26px rgba(31, 111, 84, 0.26);
-  color: #fff;
+  color: var(--fm-on-primary);
   font-weight: 600;
 }
 
@@ -352,7 +355,7 @@ page {
   border-radius: 50%;
   bottom: 72px;
   box-shadow: 0 12px 30px rgba(31, 111, 84, 0.36);
-  color: #fff;
+  color: var(--fm-on-primary);
   display: flex;
   font-size: 60px;
   font-weight: 300;

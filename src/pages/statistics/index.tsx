@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { Picker, Text, View } from '@tarojs/components'
 import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
@@ -6,7 +6,7 @@ import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { queryDietRecords } from '@/api/diet'
 import RecordItem from '@/components/record-item'
 import { MEAL_NAME_BY_TYPE, MEAL_ORDER, mealColor } from '@/constants/meal'
-import { DATE_MAX, DATE_MIN } from '@/constants/validation'
+import { DATE_MIN, MAX_QUERY_RANGE_DAYS } from '@/constants/validation'
 import type { DietStatisticsResponse } from '@/types/api'
 import { ensureLoggedIn } from '@/utils/auth'
 import {
@@ -14,9 +14,11 @@ import {
   currentWeekRange,
   dayCount,
   formatDateLabel,
+  todayStr,
   groupByRecordDate,
   isValidRange,
   recentDaysRange,
+  shiftDate,
   type DateRange
 } from '@/utils/date'
 import { toast } from '@/utils/feedback'
@@ -50,32 +52,91 @@ export default function StatisticsPage() {
   const [loading, setLoading] = useState(false)
 
   /**
-   * 当前生效的区间。
+   * 当前生效的区间（渲染用）。
    *
-   * 用 ref 而不是 state：Taro 的生命周期钩子只在挂载时注册一次，
-   * 闭包里的 state 会是旧值，回到页面刷新时就会查到错误的区间。
+   * 为什么是 state 而不是只留 ref：以前表头那行日期与「区间天数」读的是
+   * activeRangeRef.current，而 ref 只在请求**成功**后才更新，
+   * 于是切 tab 后请求失败时会出现「表头是新区间、内容却是空/旧数据」的错位。
+   * 现在区间与数据由 commitRange 成对提交，两者不可能各说一套。
    */
-  const activeRangeRef = useRef<DateRange>(currentWeekRange())
+  const [activeRange, setActiveRange] = useState<DateRange>(currentWeekRange)
 
-  const loadStats = useCallback(async (range: DateRange) => {
+  /**
+   * 生命周期钩子用的区间镜像。
+   *
+   * Taro 的 useDidShow / usePullDownRefresh 只在挂载时注册一次，
+   * 闭包里的 state 会是旧值，回到页面刷新时就会查到错误的区间，所以读 ref。
+   */
+  const activeRangeRef = useRef<DateRange>(activeRange)
+
+  /**
+   * 请求序号：只接受最后一次请求的结果。
+   *
+   * 区间 tab 连点、或下拉刷新与 useDidShow 撞在一起时，两个请求会并发；
+   * 先发的后返回就会把新数据盖回旧区间的结果（实测过这种"新头旧身体"）。
+   */
+  const requestSeqRef = useRef(0)
+
+  const commitRange = useCallback((range: DateRange) => {
+    activeRangeRef.current = range
+    setActiveRange(range)
+  }, [])
+
+  /** @returns 是否加载成功（被更新的请求抢占时也算 false，调用方不该再动 tab） */
+  const loadStats = useCallback(async (range: DateRange): Promise<boolean> => {
+    const seq = ++requestSeqRef.current
     setLoading(true)
     try {
       const data = await queryDietRecords(range)
+      if (seq !== requestSeqRef.current) {
+        return false
+      }
       setStats(data ?? null)
-      activeRangeRef.current = range
+      commitRange(range)
+      return true
     } catch (error) {
-      // 失败提示已由 request 层给出，这里清空避免把上一个区间的结果当成当前的
+      if (seq !== requestSeqRef.current) {
+        return false
+      }
+      // 失败提示已由 request 层给出；区间保持不动，这样表头与"暂无数据"说的是同一段时间
       console.error('[statistics] 加载统计失败:', error)
       setStats(null)
+      return false
     } finally {
-      setLoading(false)
+      if (seq === requestSeqRef.current) {
+        setLoading(false)
+      }
     }
-  }, [])
+  }, [commitRange])
+
+  /**
+   * 应用一个区间：请求成功才把高亮 tab 切过去。
+   *
+   * 为什么不在点击时就 setRangeKey：区间与数据必须同步展示，
+   * 否则请求失败时会出现「tab 高亮在本周、下面还是上次的月度数据」这种自相矛盾的画面。
+   */
+  async function applyRange(key: RangeKey, range: DateRange) {
+    const ok = await loadStats(range)
+    if (ok) {
+      setRangeKey(key)
+    }
+  }
+
+  /**
+   * 开始日期可选下界：不早于 DATE_MIN，且不早于「结束日期往前推 MAX_QUERY_RANGE_DAYS-1 天」。
+   *
+   * 为什么按结束日期倒推而不是写死：后端接口无分页，跨度超过 366 天会返回 2003
+   * （见 DietRecordServiceImpl.MAX_QUERY_RANGE_DAYS）。在 Picker 上就挡住，
+   * 用户选不出注定被拒的区间，也不用等一次网络往返再吃错误提示。
+   */
+  const minStart = useMemo(() => {
+    const bySpan = shiftDate(endDate, -(MAX_QUERY_RANGE_DAYS - 1))
+    return bySpan > DATE_MIN ? bySpan : DATE_MIN
+  }, [endDate])
 
   function handleTabChange(key: RangeKey) {
-    setRangeKey(key)
     if (key !== 'custom') {
-      void loadStats(PRESET_RANGES[key]())
+      void applyRange(key, PRESET_RANGES[key]())
       return
     }
     const custom = { startDate, endDate }
@@ -84,7 +145,12 @@ export default function StatisticsPage() {
       toast('开始日期不能晚于结束日期')
       return
     }
-    void loadStats(custom)
+    // 兜底：Picker 的 start 已经挡过，这里防的是「先选好区间、再把结束日期往后拖」
+    if (dayCount(custom) > MAX_QUERY_RANGE_DAYS) {
+      toast(`一次最多查 ${MAX_QUERY_RANGE_DAYS} 天，请缩短区间`)
+      return
+    }
+    void applyRange('custom', custom)
   }
 
   useDidShow(() => {
@@ -105,7 +171,6 @@ export default function StatisticsPage() {
   const totalCalories = stats?.totalCalories ?? 0
   const caloriesByMeal = stats?.caloriesByMeal ?? {}
   const groups = groupByRecordDate(records)
-  const activeRange = activeRangeRef.current
 
   return (
     <View className='fm-page'>
@@ -128,7 +193,7 @@ export default function StatisticsPage() {
               className='custom-range__picker'
               end={endDate}
               mode='date'
-              start={DATE_MIN}
+              start={minStart}
               value={startDate}
               onChange={(event) => setStartDate(event.detail.value)}
             >
@@ -138,7 +203,7 @@ export default function StatisticsPage() {
             <Text className='custom-range__sep'>至</Text>
             <Picker
               className='custom-range__picker'
-              end={DATE_MAX}
+              end={todayStr()}
               mode='date'
               start={startDate}
               value={endDate}
@@ -238,7 +303,8 @@ export default function StatisticsPage() {
               <Text className='detail-group__count'>{group.items.length} 条</Text>
             </View>
             {group.items.map((record) => (
-              <RecordItem key={record.id} record={record} />
+              // 统计页是跨天列表，副行要带所属日期（record-item 早就留了 showDate，此前没人传）
+              <RecordItem key={record.id} record={record} showDate />
             ))}
           </View>
         ))}
