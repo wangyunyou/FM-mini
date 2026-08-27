@@ -3,8 +3,9 @@ export const ROUTES = {
   LOGIN: '/pages/login/index',
   HOME: '/pages/index/index',
   RECORD_EDIT: '/pages/record-edit/index',
-  STATISTICS: '/pages/statistics/index'
+  STATISTICS: '/pages/statistics/index',
+  PROFILE: '/pages/profile/index'
 } as const
 
-/** tabBar 页面只能用 reLaunch/switchTab 进入，普通跳转 API 会静默失败。 */
-export const TAB_BAR_ROUTES: string[] = [ROUTES.HOME, ROUTES.STATISTICS]
+/** tabBar 页面只能用 reLaunch/switchTab 进入，普通 navigateTo 会静默失败。 */
+export const TAB_BAR_ROUTES: string[] = [ROUTES.HOME, ROUTES.STATISTICS, ROUTES.PROFILE]

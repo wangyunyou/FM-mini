@@ -147,6 +147,32 @@ function drawChart (rgb) {
   roundRect(cv, 54, 12, 68, 70, 5, rgb)
   return cv
 }
+/**
+ * 「我的」：圆头 + 肩身
+ * 不用 Emoji，也不用真人照片位图 —— 保持与首页/统计两个图标同一套几何画法。
+ */
+function drawProfile (rgb) {
+  const cv = canvas()
+  const cx = 40
+  // 头：实心圆（半径 13，圆心 y=26）
+  for (let y = 13; y <= 39; y++) {
+    for (let x = 27; x <= 53; x++) {
+      if (Math.hypot(x - cx, y - 26) <= 13) setPixel(cv, x, y, rgb)
+    }
+  }
+  // 肩身：以 (cx, 78) 为圆心的上半圆环，外半径 30 / 内半径 12，形成"人"的肩膀轮廓
+  for (let y = 46; y <= 72; y++) {
+    for (let x = 10; x <= 70; x++) {
+      const d = Math.hypot(x - cx, y - 78)
+      if (d <= 30 && d >= 12 && y <= 72) setPixel(cv, x, y, rgb)
+    }
+  }
+  // 底部裁齐，避免半圆留一条圆弧边显得没落地
+  for (let y = 73; y <= 78; y++) {
+    for (let x = 10; x <= 70; x++) setPixel(cv, x, y, [0, 0, 0], 0)
+  }
+  return cv
+}
 
 const OUT_DIR = path.resolve(__dirname, '../src/assets/tabbar')
 fs.mkdirSync(OUT_DIR, { recursive: true })
@@ -155,7 +181,9 @@ const icons = [
   ['home.png', drawHome(COLOR_INACTIVE)],
   ['home-active.png', drawHome(COLOR_ACTIVE)],
   ['chart.png', drawChart(COLOR_INACTIVE)],
-  ['chart-active.png', drawChart(COLOR_ACTIVE)]
+  ['chart-active.png', drawChart(COLOR_ACTIVE)],
+  ['profile.png', drawProfile(COLOR_INACTIVE)],
+  ['profile-active.png', drawProfile(COLOR_ACTIVE)]
 ]
 
 for (const [name, cv] of icons) {

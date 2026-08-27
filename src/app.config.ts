@@ -6,6 +6,7 @@ export default defineAppConfig({
     'pages/index/index',
     'pages/statistics/index',
     'pages/record-edit/index',
+    'pages/profile/index',
     'pages/login/index'
   ],
   tabBar: {
@@ -26,6 +27,12 @@ export default defineAppConfig({
         text: '统计',
         iconPath: 'assets/tabbar/chart.png',
         selectedIconPath: 'assets/tabbar/chart-active.png'
+      },
+      {
+        pagePath: 'pages/profile/index',
+        text: '我的',
+        iconPath: 'assets/tabbar/profile.png',
+        selectedIconPath: 'assets/tabbar/profile-active.png'
       }
     ]
   },

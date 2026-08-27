@@ -1,0 +1,91 @@
+/* 「我的」页特有样式（跨页复用的 fm-* 在 app.scss 里） */
+
+.profile-hero {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+/* 头像位：有 avatarUrl 用图，没有就用首字占位（后端字段已留，缺的是图床） */
+.profile-hero__avatar {
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.16);
+  border: 2px solid rgba(255, 255, 255, 0.32);
+  border-radius: 50%;
+  display: flex;
+  height: 148px;
+  justify-content: center;
+  margin-bottom: 24px;
+  overflow: hidden;
+  width: 148px;
+}
+
+.profile-hero__avatar-img {
+  height: 148px;
+  width: 148px;
+}
+
+.profile-hero__avatar-text {
+  font-size: 64px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.profile-hero__name {
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-hero__meta {
+  display: flex;
+  margin-top: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-hero__meta-item {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 24px;
+  margin: 0 12px;
+}
+
+/* 性别胶囊：三个选项均分一行，比默认 fm-chip 更窄 */
+.profile-chip {
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.profile-save {
+  margin-top: 12px;
+}
+
+/* 列表行（退出登录等低频操作） */
+.profile-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.profile-row__label {
+  color: var(--fm-text);
+  font-size: 28px;
+}
+
+.profile-row__value {
+  color: var(--fm-text-tertiary);
+  font-size: 24px;
+}
+
+.profile-row__value--danger {
+  color: var(--fm-accent-danger);
+}
+
+.profile-tip {
+  padding: 0 8px;
+}
