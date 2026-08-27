@@ -1,0 +1,181 @@
+/*
+ * 全局样式：CSS 变量 + 跨页复用的基础类。
+ *
+ * 数值按 config/index.ts 里 designWidth: 750 书写（编译时 px 自动转 rpx）。
+ * 颜色/圆角这类只定义一份，页面里引用变量，改主题不用逐页找。
+ * 注意：这里是无设计稿情况下的中性样式，接入 Figma 后请整体替换。
+ */
+
+page {
+  --fm-primary: #2f7d5e;
+  --fm-primary-weak: #e8f3ee;
+  --fm-text: #1f2329;
+  --fm-text-weak: #6b7280;
+  --fm-bg: #f5f6f8;
+  --fm-surface: #fff;
+  --fm-border: #ebedf0;
+  --fm-danger: #e64340;
+  --fm-radius: 16px;
+
+  background-color: var(--fm-bg);
+  color: var(--fm-text);
+  font-size: 28px;
+  line-height: 1.5;
+}
+
+/* 页面容器：底部留白，避免内容被悬浮按钮和 tabBar 挡住 */
+.fm-page {
+  min-height: 100vh;
+  padding: 24px 24px 180px;
+  box-sizing: border-box;
+}
+
+.fm-card {
+  background-color: var(--fm-surface);
+  border-radius: var(--fm-radius);
+  margin-bottom: 24px;
+  padding: 24px;
+}
+
+.fm-card--flat {
+  box-shadow: none;
+}
+
+.fm-row {
+  display: flex;
+  align-items: center;
+}
+
+.fm-row--between {
+  justify-content: space-between;
+}
+
+.fm-row--wrap {
+  flex-wrap: wrap;
+}
+
+.fm-title {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.fm-weak {
+  color: var(--fm-text-weak);
+  font-size: 24px;
+}
+
+.fm-num {
+  font-size: 48px;
+  font-weight: 600;
+}
+
+.fm-unit {
+  font-size: 24px;
+  margin-left: 6px;
+  color: var(--fm-text-weak);
+}
+
+.fm-tag {
+  background-color: var(--fm-primary-weak);
+  border-radius: 8px;
+  color: var(--fm-primary);
+  font-size: 22px;
+  margin-right: 12px;
+  padding: 4px 12px;
+}
+
+/* 表单控件 */
+.fm-field {
+  margin-bottom: 24px;
+}
+
+.fm-field__label {
+  color: var(--fm-text-weak);
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.fm-input {
+  background-color: var(--fm-bg);
+  border-radius: 12px;
+  box-sizing: border-box;
+  font-size: 28px;
+  min-height: 80px;
+  padding: 16px 20px;
+  width: 100%;
+}
+
+.fm-picker {
+  background-color: var(--fm-bg);
+  border-radius: 12px;
+  color: var(--fm-text);
+  font-size: 28px;
+  line-height: 48px;
+  padding: 16px 20px;
+}
+
+.fm-picker__placeholder {
+  color: var(--fm-text-weak);
+}
+
+/* 按钮 */
+.fm-btn {
+  background-color: var(--fm-surface);
+  border: 1px solid var(--fm-border);
+  border-radius: 12px;
+  color: var(--fm-text);
+  font-size: 30px;
+  line-height: 84px;
+  margin: 0;
+  padding: 0 32px;
+  text-align: center;
+}
+
+.fm-btn::after {
+  border: none;
+}
+
+.fm-btn--primary {
+  background-color: var(--fm-primary);
+  border-color: var(--fm-primary);
+  color: #fff;
+}
+
+.fm-btn--danger {
+  background-color: transparent;
+  border-color: var(--fm-danger);
+  color: var(--fm-danger);
+  font-size: 26px;
+  line-height: 64px;
+}
+
+.fm-btn[disabled] {
+  opacity: 0.6;
+}
+
+.fm-fab {
+  align-items: center;
+  background-color: var(--fm-primary);
+  border-radius: 50%;
+  bottom: 60px;
+  color: #fff;
+  display: flex;
+  font-size: 56px;
+  height: 104px;
+  justify-content: center;
+  position: fixed;
+  right: 40px;
+  width: 104px;
+  z-index: 10;
+}
+
+.fm-section-head {
+  margin-bottom: 8px;
+}
+
+.fm-empty {
+  color: var(--fm-text-weak);
+  font-size: 26px;
+  padding: 80px 0;
+  text-align: center;
+}

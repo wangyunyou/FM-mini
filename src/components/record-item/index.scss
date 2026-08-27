@@ -1,0 +1,58 @@
+.record-item {
+  align-items: center;
+  border-bottom: 1px solid var(--fm-border);
+  display: flex;
+  justify-content: space-between;
+  padding: 24px 0;
+}
+
+.record-item:last-child {
+  border-bottom: none;
+}
+
+.record-item__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.record-item__head {
+  align-items: center;
+  display: flex;
+}
+
+.record-item__name {
+  font-size: 28px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-item__sub {
+  display: flex;
+  margin-top: 8px;
+}
+
+.record-item__remark {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-item__sub .record-item__remark {
+  margin-left: 16px;
+}
+
+.record-item__calories {
+  align-items: baseline;
+  display: flex;
+  flex-shrink: 0;
+  margin-left: 20px;
+}
+
+.record-item__calories-num {
+  color: var(--fm-primary);
+  font-size: 32px;
+  font-weight: 600;
+}
