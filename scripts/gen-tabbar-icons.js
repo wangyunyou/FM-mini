@@ -1,0 +1,149 @@
+/**
+ * 生成 tabBar 图标 PNG（81x81 RGBA），不依赖任何图像库。
+ *
+ * 小程序 tabBar 必须有本地图标文件，而项目里没有设计资源；
+ * 用 Node 内置 zlib + 手写 PNG 分块直接产出，避免为了两张图引入 sharp/jimp。
+ */
+const fs = require('fs')
+const path = require('path')
+const zlib = require('zlib')
+
+const SIZE = 81
+const COLOR_INACTIVE = [138, 143, 153] // #8a8f99
+const COLOR_ACTIVE = [31, 111, 84] // #1f6f54
+
+// ---------- PNG 编码 ----------
+const CRC_TABLE = (() => {
+  const table = new Int32Array(256)
+  for (let n = 0; n < 256; n++) {
+    let c = n
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
+    }
+    table[n] = c
+  }
+  return table
+})()
+
+function crc32 (buf) {
+  let c = 0xffffffff
+  for (let i = 0; i < buf.length; i++) {
+    c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8)
+  }
+  return (c ^ 0xffffffff) >>> 0
+}
+
+function chunk (type, data) {
+  const len = Buffer.alloc(4)
+  len.writeUInt32BE(data.length)
+  const typeBuf = Buffer.from(type, 'ascii')
+  const crcBuf = Buffer.alloc(4)
+  crcBuf.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])))
+  return Buffer.concat([len, typeBuf, data, crcBuf])
+}
+
+function encodePng (width, height, rgba) {
+  const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  const ihdr = Buffer.alloc(13)
+  ihdr.writeUInt32BE(width, 0)
+  ihdr.writeUInt32BE(height, 4)
+  ihdr[8] = 8 // bit depth
+  ihdr[9] = 6 // RGBA
+  const raw = Buffer.alloc(height * (1 + width * 4))
+  let p = 0
+  for (let y = 0; y < height; y++) {
+    raw[p++] = 0 // filter: none
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4
+      raw[p++] = rgba[i]
+      raw[p++] = rgba[i + 1]
+      raw[p++] = rgba[i + 2]
+      raw[p++] = rgba[i + 3]
+    }
+  }
+  return Buffer.concat([
+    sig,
+    chunk('IHDR', ihdr),
+    chunk('IDAT', zlib.deflateSync(raw, { level: 9 })),
+    chunk('IEND', Buffer.alloc(0))
+  ])
+}
+
+// ---------- 绘图 ----------
+function canvas () {
+  return { data: Buffer.alloc(SIZE * SIZE * 4), width: SIZE, height: SIZE }
+}
+
+function setPixel (cv, x, y, rgb, alpha = 255) {
+  if (x < 0 || y < 0 || x >= cv.width || y >= cv.height) return
+  const i = (y * cv.width + x) * 4
+  cv.data[i] = rgb[0]
+  cv.data[i + 1] = rgb[1]
+  cv.data[i + 2] = rgb[2]
+  cv.data[i + 3] = alpha
+}
+
+function rect (cv, x0, y0, x1, y1, rgb) {
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) setPixel(cv, x, y, rgb)
+  }
+}
+
+function roundRect (cv, x0, y0, x1, y1, r, rgb) {
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const inCornerX = x < x0 + r ? x0 + r - x : x > x1 - r ? x - (x1 - r) : 0
+      const inCornerY = y < y0 + r ? y0 + r - y : y > y1 - r ? y - (y1 - r) : 0
+      if (inCornerX > 0 && inCornerY > 0 && Math.hypot(inCornerX, inCornerY) > r) continue
+      setPixel(cv, x, y, rgb)
+    }
+  }
+}
+
+/** 等腰三角形：顶点 (cx, topY)，底边 y = bottomY，半宽 halfW */
+function triangle (cv, cx, topY, bottomY, halfW, rgb) {
+  for (let y = topY; y <= bottomY; y++) {
+    const t = (y - topY) / (bottomY - topY)
+    const hw = Math.round(halfW * t)
+    for (let x = cx - hw; x <= cx + hw; x++) setPixel(cv, x, y, rgb)
+  }
+}
+
+/** 屋顶 + 房体，中间挖一个门洞，读起来是「房子」而不是三角加方块 */
+function drawHome (rgb) {
+  const cv = canvas()
+  triangle(cv, 40, 12, 40, 32, rgb)
+  roundRect(cv, 16, 40, 64, 70, 6, rgb)
+  // 挖门洞（透明）
+  for (let y = 52; y <= 70; y++) {
+    for (let x = 34; x <= 46; x++) setPixel(cv, x, y, [0, 0, 0], 0)
+  }
+  // 屋顶与房体之间的过渡补齐，避免只靠三角形尖顶显得头重脚轻
+  rect(cv, 10, 38, 70, 42, rgb)
+  return cv
+}
+
+/** 三根柱子的统计图 */
+function drawChart (rgb) {
+  const cv = canvas()
+  roundRect(cv, 12, 44, 26, 70, 5, rgb)
+  roundRect(cv, 33, 26, 47, 70, 5, rgb)
+  roundRect(cv, 54, 12, 68, 70, 5, rgb)
+  return cv
+}
+
+const OUT_DIR = path.resolve(__dirname, '../src/assets/tabbar')
+fs.mkdirSync(OUT_DIR, { recursive: true })
+
+const icons = [
+  ['home.png', drawHome(COLOR_INACTIVE)],
+  ['home-active.png', drawHome(COLOR_ACTIVE)],
+  ['chart.png', drawChart(COLOR_INACTIVE)],
+  ['chart-active.png', drawChart(COLOR_ACTIVE)]
+]
+
+for (const [name, cv] of icons) {
+  const buf = encodePng(cv.width, cv.height, cv.data)
+  fs.writeFileSync(path.join(OUT_DIR, name), buf)
+  console.log(`${name}: ${buf.length} bytes`)
+}

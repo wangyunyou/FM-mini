@@ -31,6 +31,22 @@ export const MEAL_NAME_BY_TYPE: Record<MealType, string> = {
 }
 
 /**
+ * 餐次配色：统计页分布条、首页餐次分组标题、记录行标签共用一套。
+ * 色相拉开保证四者不混淆，但饱和度控制在一起看不花。
+ */
+export const MEAL_COLOR: Record<MealType, string> = {
+  [MealType.Breakfast]: '#e08a2f',
+  [MealType.Lunch]: '#2f8f6c',
+  [MealType.Dinner]: '#4f7cd8',
+  [MealType.Snack]: '#c2679f'
+}
+
+/** 取餐次色，未知餐次回落到中性灰而不是报错。 */
+export function mealColor(mealType: number | undefined | null): string {
+  return MEAL_COLOR[mealType as MealType] ?? '#9ba5a0'
+}
+
+/**
  * 餐次码转中文名。
  *
  * 后端列表接口已返回 mealTypeName，优先用它；

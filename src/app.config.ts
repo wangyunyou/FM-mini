@@ -1,3 +1,5 @@
+import { THEME } from './constants/theme'
+
 export default defineAppConfig({
   // 第一项是启动页；未登录时由 app.ts 的 useLaunch 重定向到登录页
   pages: [
@@ -6,22 +8,32 @@ export default defineAppConfig({
     'pages/record-edit/index',
     'pages/login/index'
   ],
-  // 只用文字 tabBar，不依赖图标资源；后续接入设计稿再补 iconPath
   tabBar: {
-    color: '#8a8f99',
-    selectedColor: '#2f7d5e',
+    color: THEME.tabBarInactive,
+    selectedColor: THEME.primary,
     backgroundColor: '#ffffff',
-    borderStyle: 'black',
+    // 白色描边在白色 tabBar 上等于不可见，比黑线干净
+    borderStyle: 'white',
     list: [
-      { pagePath: 'pages/index/index', text: '打卡' },
-      { pagePath: 'pages/statistics/index', text: '统计' }
+      {
+        pagePath: 'pages/index/index',
+        text: '打卡',
+        iconPath: 'assets/tabbar/home.png',
+        selectedIconPath: 'assets/tabbar/home-active.png'
+      },
+      {
+        pagePath: 'pages/statistics/index',
+        text: '统计',
+        iconPath: 'assets/tabbar/chart.png',
+        selectedIconPath: 'assets/tabbar/chart-active.png'
+      }
     ]
   },
   window: {
-    backgroundTextStyle: 'light',
+    backgroundTextStyle: 'dark',
     navigationBarBackgroundColor: '#ffffff',
     navigationBarTitleText: 'FM 饮食记录',
     navigationBarTextStyle: 'black',
-    backgroundColor: '#f5f6f8'
+    backgroundColor: THEME.pageBackground
   }
 })

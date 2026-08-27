@@ -24,7 +24,10 @@ export default defineConfig<'webpack5'>(async (merge) => {
     ],
     defineConstants: {},
     copy: {
-      patterns: [],
+      patterns: [
+        // tabBar 图标由 scripts/gen-tabbar-icons.js 生成到 src/assets，构建时原样拷到 dist
+        { from: 'src/assets/', to: 'dist/assets/' }
+      ],
       options: {}
     },
     framework: 'react',

@@ -51,6 +51,11 @@ export function todayStr(): string {
   return formatDate(new Date())
 }
 
+/** 相对今天偏移 offset 天的日期串，负数往前，给「今天/昨天/前天」快捷项用。 */
+export function dayOffsetStr(offset: number): string {
+  return formatDate(addDays(new Date(), offset))
+}
+
 export function addDays(date: Date, days: number): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
 }
@@ -88,6 +93,11 @@ export function currentMonthRange(): DateRange {
 export function recentDaysRange(days: number): DateRange {
   const end = new Date()
   return { startDate: formatDate(addDays(end, -(Math.max(days, 1) - 1))), endDate: formatDate(end) }
+}
+
+/** 本周已经过了几天（周一计为第 1 天），用作「本周日均」的分母：除以整 7 天会把日均算小。 */
+export function daysElapsedInWeek(now: Date = new Date()): number {
+  return ((now.getDay() + 6) % 7) + 1
 }
 
 /** 单天区间。 */

@@ -1,49 +1,66 @@
 /*
- * 全局样式：CSS 变量 + 跨页复用的基础类。
+ * 设计系统：token + 跨页复用的基础类。
  *
  * 数值按 config/index.ts 里 designWidth: 750 书写（编译时 px 自动转 rpx）。
- * 颜色/圆角这类只定义一份，页面里引用变量，改主题不用逐页找。
- * 注意：这里是无设计稿情况下的中性样式，接入 Figma 后请整体替换。
+ * 色值/圆角/阴影只在本文件定义一份，页面 scss 一律引用变量，
+ * 这样换主题只改一个块，不用逐页找。
  */
 
 page {
-  --fm-primary: #2f7d5e;
-  --fm-primary-weak: #e8f3ee;
-  --fm-text: #1f2329;
-  --fm-text-weak: #6b7280;
-  --fm-bg: #f5f6f8;
+  /* 色板 */
+  --fm-primary: #1f6f54;
+  --fm-primary-bright: #2f8f6c;
+  --fm-primary-weak: #e7f2ec;
+  --fm-accent-warn: #e08a2f;
+  --fm-accent-danger: #d9534f;
+  --fm-text: #14201b;
+  --fm-text-secondary: #6b7770;
+  --fm-text-tertiary: #9ba5a0;
+  --fm-bg: #f3f5f4;
   --fm-surface: #fff;
-  --fm-border: #ebedf0;
-  --fm-danger: #e64340;
-  --fm-radius: 16px;
+  --fm-surface-muted: #f6f8f7;
+  --fm-border: #e8ecea;
+
+  /* 尺度 */
+  --fm-radius-lg: 28px;
+  --fm-radius: 20px;
+  --fm-radius-sm: 12px;
+  --fm-shadow: 0 8px 28px rgba(20, 55, 42, 0.07);
+  --fm-shadow-sm: 0 4px 16px rgba(20, 55, 42, 0.05);
+  --fm-hero: linear-gradient(135deg, #2f8f6c 0%, #1f6f54 100%);
 
   background-color: var(--fm-bg);
   color: var(--fm-text);
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
   font-size: 28px;
   line-height: 1.5;
 }
 
-/* 页面容器：底部留白，避免内容被悬浮按钮和 tabBar 挡住 */
+/* ---------- 布局 ---------- */
+
+/* 页面容器：底部留白给悬浮按钮与 tabBar，safe-area 兜住全面屏 */
 .fm-page {
-  min-height: 100vh;
-  padding: 24px 24px 180px;
   box-sizing: border-box;
+  min-height: 100vh;
+  padding: 32px 32px 200px;
+  padding-bottom: calc(200px + env(safe-area-inset-bottom));
 }
 
 .fm-card {
   background-color: var(--fm-surface);
-  border-radius: var(--fm-radius);
-  margin-bottom: 24px;
-  padding: 24px;
+  border-radius: var(--fm-radius-lg);
+  box-shadow: var(--fm-shadow-sm);
+  margin-bottom: 28px;
+  padding: 32px;
 }
 
-.fm-card--flat {
-  box-shadow: none;
+.fm-card--flush {
+  padding: 24px 32px;
 }
 
 .fm-row {
-  display: flex;
   align-items: center;
+  display: flex;
 }
 
 .fm-row--between {
@@ -54,81 +71,244 @@ page {
   flex-wrap: wrap;
 }
 
+.fm-gap-sm {
+  margin-top: 16px;
+}
+
+/* ---------- 文字 ---------- */
+
 .fm-title {
-  font-size: 32px;
+  font-size: 34px;
   font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.fm-section-head {
+  margin-bottom: 20px;
 }
 
 .fm-weak {
-  color: var(--fm-text-weak);
+  color: var(--fm-text-secondary);
   font-size: 24px;
+}
+
+.fm-tertiary {
+  color: var(--fm-text-tertiary);
+  font-size: 22px;
 }
 
 .fm-num {
-  font-size: 48px;
-  font-weight: 600;
+  font-size: 76px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  line-height: 1.1;
 }
 
 .fm-unit {
+  color: var(--fm-text-tertiary);
   font-size: 24px;
-  margin-left: 6px;
-  color: var(--fm-text-weak);
+  margin-left: 8px;
 }
 
 .fm-tag {
   background-color: var(--fm-primary-weak);
   border-radius: 8px;
   color: var(--fm-primary);
+  flex-shrink: 0;
   font-size: 22px;
-  margin-right: 12px;
-  padding: 4px 12px;
+  font-weight: 500;
+  margin-right: 14px;
+  padding: 4px 14px;
 }
 
-/* 表单控件 */
+/* ---------- 渐变主视觉卡 ---------- */
+
+.fm-hero {
+  background: var(--fm-hero);
+  border-radius: var(--fm-radius-lg);
+  box-shadow: 0 14px 36px rgba(31, 111, 84, 0.24);
+  color: #fff;
+  margin-bottom: 28px;
+  padding: 40px 36px 36px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 右上角装饰光斑，避免大面积纯色显得空 */
+.fm-hero::after {
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 50%;
+  content: '';
+  height: 320px;
+  position: absolute;
+  right: -110px;
+  top: -150px;
+  width: 320px;
+}
+
+.fm-hero__label {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 25px;
+  letter-spacing: 0.5px;
+}
+
+.fm-hero .fm-num {
+  color: #fff;
+}
+
+.fm-hero .fm-unit {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* hero 底部的一排次级指标 */
+.fm-hero__stats {
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  margin-top: 36px;
+  padding-top: 28px;
+  position: relative;
+  z-index: 1;
+}
+
+.fm-hero__stat {
+  flex: 1;
+}
+
+.fm-hero__stat-num {
+  display: block;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.fm-hero__stat-label {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 22px;
+}
+
+/* ---------- 进度条 ---------- */
+
+.fm-progress {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  height: 14px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.fm-progress__fill {
+  background-color: #fff;
+  border-radius: 999px;
+  height: 100%;
+  transition: width 0.35s ease;
+}
+
+.fm-progress--on-light {
+  background: var(--fm-surface-muted);
+}
+
+.fm-progress--on-light .fm-progress__fill {
+  background: var(--fm-primary-bright);
+}
+
+/* ---------- 表单 ---------- */
+
 .fm-field {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+}
+
+.fm-field:last-child {
+  margin-bottom: 0;
 }
 
 .fm-field__label {
-  color: var(--fm-text-weak);
+  color: var(--fm-text-secondary);
   font-size: 24px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .fm-input {
-  background-color: var(--fm-bg);
-  border-radius: 12px;
+  background-color: var(--fm-surface-muted);
+  border: 2px solid transparent;
+  border-radius: var(--fm-radius);
   box-sizing: border-box;
   font-size: 28px;
-  min-height: 80px;
-  padding: 16px 20px;
+  min-height: 92px;
+  padding: 20px 24px;
   width: 100%;
 }
 
 .fm-picker {
-  background-color: var(--fm-bg);
-  border-radius: 12px;
+  background-color: var(--fm-surface-muted);
+  border-radius: var(--fm-radius);
   color: var(--fm-text);
   font-size: 28px;
-  line-height: 48px;
-  padding: 16px 20px;
+  line-height: 52px;
+  padding: 20px 24px;
 }
 
-.fm-picker__placeholder {
-  color: var(--fm-text-weak);
+.fm-picker--locked {
+  color: var(--fm-text-tertiary);
 }
 
-/* 按钮 */
+/* 胶囊选项组（餐次、性别、日期快捷） */
+.fm-chips {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/* 等分不折行版：4 个以上选项用这个，否则会换行成 3+1 的难看排布 */
+.fm-chips--grid {
+  flex-wrap: nowrap;
+}
+
+.fm-chips--grid .fm-chip {
+  flex: 1;
+  margin-right: 16px;
+  min-width: 0;
+  padding: 0 6px;
+}
+
+.fm-chips--grid .fm-chip:last-child {
+  margin-right: 0;
+}
+
+.fm-chip {
+  background-color: var(--fm-surface-muted);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  color: var(--fm-text-secondary);
+  font-size: 26px;
+  line-height: 68px;
+  margin-bottom: 16px;
+  margin-right: 16px;
+  min-width: 132px;
+  padding: 0 28px;
+  text-align: center;
+}
+
+.fm-chip--active {
+  background-color: var(--fm-primary-weak);
+  border-color: var(--fm-primary);
+  color: var(--fm-primary);
+  font-weight: 600;
+}
+
+/* ---------- 按钮 ---------- */
+
 .fm-btn {
   background-color: var(--fm-surface);
-  border: 1px solid var(--fm-border);
-  border-radius: 12px;
+  border: 2px solid var(--fm-border);
+  border-radius: var(--fm-radius);
+  box-sizing: border-box;
   color: var(--fm-text);
   font-size: 30px;
-  line-height: 84px;
+  font-weight: 500;
+  line-height: 92px;
   margin: 0;
-  padding: 0 32px;
+  padding: 0 36px;
   text-align: center;
+  width: 100%;
 }
 
 .fm-btn::after {
@@ -136,46 +316,69 @@ page {
 }
 
 .fm-btn--primary {
-  background-color: var(--fm-primary);
-  border-color: var(--fm-primary);
+  background: var(--fm-hero);
+  border-color: transparent;
+  box-shadow: 0 10px 26px rgba(31, 111, 84, 0.26);
   color: #fff;
+  font-weight: 600;
 }
 
 .fm-btn--danger {
-  background-color: transparent;
-  border-color: var(--fm-danger);
-  color: var(--fm-danger);
-  font-size: 26px;
-  line-height: 64px;
+  background-color: var(--fm-surface);
+  border-color: #f4dedd;
+  color: var(--fm-accent-danger);
+  font-size: 28px;
+  line-height: 84px;
 }
 
 .fm-btn[disabled] {
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 .fm-fab {
   align-items: center;
-  background-color: var(--fm-primary);
+  background: var(--fm-hero);
   border-radius: 50%;
-  bottom: 60px;
+  bottom: 72px;
+  box-shadow: 0 12px 30px rgba(31, 111, 84, 0.36);
   color: #fff;
   display: flex;
-  font-size: 56px;
-  height: 104px;
+  font-size: 60px;
+  font-weight: 300;
+  height: 116px;
   justify-content: center;
+  line-height: 1;
+  padding-bottom: 6px;
   position: fixed;
   right: 40px;
-  width: 104px;
+  width: 116px;
   z-index: 10;
 }
 
-.fm-section-head {
-  margin-bottom: 8px;
-}
+/* ---------- 状态 ---------- */
 
 .fm-empty {
-  color: var(--fm-text-weak);
+  color: var(--fm-text-tertiary);
   font-size: 26px;
-  padding: 80px 0;
+  padding: 72px 0 64px;
+  text-align: center;
+}
+
+.fm-empty__icon {
+  background-color: var(--fm-surface-muted);
+  border-radius: 50%;
+  display: block;
+  font-size: 56px;
+  height: 128px;
+  line-height: 128px;
+  margin: 0 auto 24px;
+  text-align: center;
+  width: 128px;
+}
+
+.fm-loading {
+  color: var(--fm-text-tertiary);
+  font-size: 26px;
+  padding: 72px 0;
   text-align: center;
 }
