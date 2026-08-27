@@ -105,7 +105,7 @@
 }
 
 .edit-actionbar {
-  background: linear-gradient(180deg, rgba(243, 245, 244, 0) 0%, var(--fm-bg) 42%);
+  background: var(--fm-fade-to-bg);
   bottom: 0;
   left: 0;
   padding: 32px 32px 28px;

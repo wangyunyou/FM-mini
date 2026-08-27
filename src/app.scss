@@ -7,30 +7,52 @@
  */
 
 page {
-  /* 色板 */
-  --fm-primary: #1f6f54;
-  --fm-primary-bright: #2f8f6c;
-  --fm-primary-weak: #e7f2ec;
-  --fm-accent-warn: #e08a2f;
-  --fm-accent-danger: #d9534f;
-  --fm-text: #14201b;
-  --fm-text-secondary: #6b7770;
-  --fm-text-tertiary: #9ba5a0;
-  --fm-bg: #f3f5f4;
+  /*
+   * 色板（2026-08-28 定色）：界面退到「松烟墨」，饱和度只留给餐次四类。
+   *
+   * 为什么不让界面也吃饱和绿：
+   * - 旧 primary #1f6f54 与旧午餐色 #2f8f6c 色相只差 2°（Lab ΔE=13），
+   *   而 primary-bright 与午餐色是**同一个 hex** —— 统计页的 hero 和「午餐」分布条
+   *   是一个颜色，分类色被界面吃掉。
+   * - 微信自己的品牌绿 #07C160 在小程序里到处都是，纯绿主色辨识度反而低。
+   * 所以新 primary 往青/墨推（色相 169°、更暗），四类餐次色各自拉开：
+   *   早餐 19° / 午餐 99° / 晚餐 228° / 加餐 330°，绿盲与红盲模拟下最难分的一对 ΔE≥25。
+   *
+   * 对比度门槛：文字 ≥4.5、图形（色点/分布条/色带）≥3.0，已逐项验算。
+   * 旧值里 text-tertiary #9ba5a0 只有 2.54，却同时用于 .fm-tertiary 提示文字、
+   * 空状态文案和 tabBar 未选中项 —— 属于不达标，这次一并提到 4.53。
+   * 顺带删掉 --fm-accent-warn：全项目零引用，且与旧早餐色 #e08a2f 逐字同色。
+   */
+  --fm-primary: #14524b;
+  --fm-primary-bright: #1c6f5c;
+  --fm-primary-weak: #e4efec;
+  --fm-accent-danger: #c0392b;
+  /* danger 按钮的描边：以前这里散写 #f4dedd，收进 token 才能整体换肤 */
+  --fm-accent-danger-weak: #f2dedb;
+  --fm-text: #101e1b;
+  --fm-text-secondary: #4f615b;
+  --fm-text-tertiary: #697a74;
+  --fm-bg: #f2f5f4;
   --fm-surface: #fff;
-  --fm-surface-muted: #f6f8f7;
-  --fm-border: #e8ecea;
+  --fm-surface-muted: #f5f8f7;
+  --fm-border: #e2eae8;
   /* 深色底（hero / 主按钮 / tabBar 白）之上的前景色：
      以前三处页面 scss 里散写了 #fff，违反"色值只在本文件定义一份"，统一收进变量 */
   --fm-on-primary: #fff;
 
-  /* 尺度 */
+  /* 尺度：阴影色跟着新 primary 走，否则墨绿底上会透出旧草绿的边 */
   --fm-radius-lg: 28px;
   --fm-radius: 20px;
   --fm-radius-sm: 12px;
-  --fm-shadow: 0 8px 28px rgba(20, 55, 42, 0.07);
-  --fm-shadow-sm: 0 4px 16px rgba(20, 55, 42, 0.05);
-  --fm-hero: linear-gradient(135deg, #2f8f6c 0%, #1f6f54 100%);
+  --fm-shadow: 0 8px 28px rgba(16, 60, 54, 0.07);
+  --fm-shadow-sm: 0 4px 16px rgba(16, 60, 54, 0.05);
+  /* 主色发光：选中态胶囊 / tab 用。收在这里是因为页面 scss 曾散写过
+     rgba(31, 111, 84, .28) —— 旧 primary 的 rgba 形式，换主题时必然漏改 */
+  --fm-glow: 0 6px 18px rgba(20, 82, 75, 0.28);
+  /* 底部固定操作栏的渐隐底：起始透明 + 落到 --fm-bg 同值（rgba 写法，
+     自定义属性没法嵌进 rgba()，所以这里只能重复一次字面值，改 bg 时记得同步） */
+  --fm-fade-to-bg: linear-gradient(180deg, rgba(242, 245, 244, 0) 0%, #f2f5f4 42%);
+  --fm-hero: linear-gradient(135deg, #1c6f5c 0%, #14524b 100%);
 
   background-color: var(--fm-bg);
   color: var(--fm-text);
@@ -129,7 +151,7 @@ page {
 .fm-hero {
   background: var(--fm-hero);
   border-radius: var(--fm-radius-lg);
-  box-shadow: 0 14px 36px rgba(31, 111, 84, 0.24);
+  box-shadow: 0 14px 36px rgba(20, 82, 75, 0.26);
   color: var(--fm-on-primary);
   margin-bottom: 28px;
   padding: 40px 36px 36px;
@@ -332,14 +354,14 @@ page {
 .fm-btn--primary {
   background: var(--fm-hero);
   border-color: transparent;
-  box-shadow: 0 10px 26px rgba(31, 111, 84, 0.26);
+  box-shadow: 0 10px 26px rgba(20, 82, 75, 0.28);
   color: var(--fm-on-primary);
   font-weight: 600;
 }
 
 .fm-btn--danger {
   background-color: var(--fm-surface);
-  border-color: #f4dedd;
+  border-color: var(--fm-accent-danger-weak);
   color: var(--fm-accent-danger);
   font-size: 28px;
   line-height: 84px;
@@ -354,7 +376,7 @@ page {
   background: var(--fm-hero);
   border-radius: 50%;
   bottom: 72px;
-  box-shadow: 0 12px 30px rgba(31, 111, 84, 0.36);
+  box-shadow: 0 12px 30px rgba(20, 82, 75, 0.34);
   color: var(--fm-on-primary);
   display: flex;
   font-size: 60px;

@@ -82,7 +82,34 @@ Taro 的 `useDidShow` / `useLoad` 等生命周期钩子只在挂载时注册一�
 
 ## 样式
 
-当前是无设计稿情况下的中性实现。接入 Figma 后改 `src/app.scss` 里 `page` 块的 CSS 变量（`--fm-primary` 等）即可整体换肤，不要在页面 scss 里散写色值。数值按 `designWidth: 750` 书写，编译时 px 自动转 rpx。
+当前是无设计稿情况下的中性实现。**换肤只改两处**，缺一不可（色值有两份来源）：
+
+1. `src/app.scss` 的 `page` 块 —— 样式侧唯一来源，页面 scss 一律引用 `--fm-*`，不许散写色值
+2. `src/constants/theme.ts` —— 配置侧唯一来源，`app.config.ts` 与页面 `index.config.ts` 不支持 CSS 变量，导航栏/tabBar 只能写字面 hex
+
+两处必须同值，否则导航栏和页面内容会露出色差。数值按 `designWidth: 750` 书写，编译时 px 自动转 rpx。
+
+### 当前色板（2026-08-28 定色：界面退「松烟墨」，饱和色只留给餐次）
+
+| 约束 | 门槛 | 现值 |
+|---|---|---|
+| 文字色（primary、text 三级、danger） | 白底对比 ≥4.5 | 8.98 ／ 17.2 ／ 6.58 ／ 4.53 ／ 5.44 |
+| 图形色（餐次点、分布条、记录行色条） | 白底对比 ≥3.0 | 早餐 3.34 ／ 午餐 3.13 ／ 晚餐 4.03 ／ 加餐 4.67 |
+| 四类餐次色彼此 | 绿盲、红盲模拟下 Lab ΔE ≥20 | 最难分的一对 25 |
+| 餐次色 vs 界面色 | ΔE ≥25 | 最小 61 |
+
+改色时注意三条踩过的坑：
+
+- **先看界面色有没有吃掉内容色，再管好看不好看。** 旧 primary `#1f6f54` 与旧午餐色 `#2f8f6c` 色相只差 2°，
+  而 `--fm-primary-bright` 与午餐色是**同一个 hex** —— 统计页 hero 和「午餐」分布条糊成一片。
+- **rgba 会绕过按 hex 的 grep。** 统计页曾散写 `rgba(31, 111, 84, .28)`（旧 primary 的 rgba 形式）。
+  自查用 `grep -rnE "#[0-9a-f]{3,8}|rgba\(" src/pages src/components`；
+  hero 上的白色透明层 `rgba(255, 255, 255, x)` 是既定写法可放过，其余一律收进 token。
+- **自定义属性嵌不进 `rgba()`**（`rgba(var(--x), .3)` 在小程序渲染层不稳），所以带 alpha 的整条阴影/渐隐
+  要作为 token 定义在 app.scss：`--fm-glow`、`--fm-fade-to-bg`。
+
+`app.scss` 里 `fm-tag` / `fm-gap-sm` / `fm-row--wrap` / `fm-btn--danger` / `fm-progress--on-light`
+暂无页面引用，是**刻意保留的系统原语**（不是遗漏），新页面直接复用即可。
 
 ## 不要做的事
 
