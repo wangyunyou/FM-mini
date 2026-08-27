@@ -186,6 +186,17 @@ page {
   font-size: 22px;
 }
 
+/* hero 底部对指标口径的补充说明 */
+.fm-hero__note {
+  color: rgba(255, 255, 255, 0.68);
+  display: block;
+  font-size: 22px;
+  line-height: 1.5;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+
 /* ---------- 进度条 ---------- */
 
 .fm-progress {

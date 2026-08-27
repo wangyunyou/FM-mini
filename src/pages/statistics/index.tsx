@@ -179,12 +179,13 @@ export default function StatisticsPage() {
             <Text className='fm-hero__stat-label'>区间天数</Text>
           </View>
         </View>
+        {/* 口径说明放在日均数字正下方，而不是“按餐次分布”卡片标题栏 */}
+        <Text className='fm-hero__note'>日均 = 区间总量 ÷ 有记录的天数</Text>
       </View>
 
       <View className='fm-card'>
         <View className='fm-row fm-row--between fm-section-head'>
           <Text className='fm-title'>按餐次分布</Text>
-          <Text className='fm-tertiary'>日均按有记录天数计</Text>
         </View>
         {totalCalories > 0 ? (
           MEAL_ORDER.map((mealType) => {

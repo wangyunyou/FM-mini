@@ -174,6 +174,10 @@ export default function IndexPage() {
             <Text className='fm-hero__stat-label'>今日条数</Text>
           </View>
         </View>
+        {/* 首页日均口径与统计页不同：分母是本周已过天数，不是有记录天数 */}
+        <Text className='fm-hero__note'>
+          本周日均 = 本周累计 ÷ 本周已过 {daysElapsedInWeek()} 天
+        </Text>
       </View>
 
       <View className='fm-card'>
