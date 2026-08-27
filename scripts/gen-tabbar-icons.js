@@ -9,8 +9,26 @@ const path = require('path')
 const zlib = require('zlib')
 
 const SIZE = 81
-const COLOR_INACTIVE = [138, 143, 153] // #8a8f99
-const COLOR_ACTIVE = [31, 111, 84] // #1f6f54
+
+/**
+ * 图标颜色从 constants/theme.ts 读，不在这里重复一份字面值。
+ *
+ * 为什么：PNG 是烘焙的，主题一改就会和 tabBar 的 selectedColor / color 出现色差，
+ * 而这种色差在开发者工具里很容易被当成"渲染抖动"忽略掉。
+ * 旧版本这里写死过 #1f6f54（旧 primary）与 #8a8f99（连当时 theme.ts 的 #9ba5a0 都不一致），
+ * 2026-08-28 换主题时才暴露出来。
+ */
+const themeSrc = fs.readFileSync(path.resolve(__dirname, '../src/constants/theme.ts'), 'utf8')
+function themeColor (key) {
+  const matched = new RegExp(`${key}:\\s*'#([0-9a-f]{6})'`, 'i').exec(themeSrc)
+  if (!matched) {
+    throw new Error(`无法从 constants/theme.ts 解析 ${key}，图标颜色会失去来源`)
+  }
+  const hex = matched[1]
+  return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)]
+}
+const COLOR_ACTIVE = themeColor('primary')
+const COLOR_INACTIVE = themeColor('tabBarInactive')
 
 // ---------- PNG 编码 ----------
 /** gAMA 需为整数干分之一，1/2.2 约为 45455，sRGB 内容用这个值是惯例 */
