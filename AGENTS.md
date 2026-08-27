@@ -54,8 +54,13 @@ pnpm lint          # eslint
    要改资料一律走 `PUT /api/user/info`。
 8. `users.status = 1`（禁用）后端返回业务码 **1002**，`request` 层按重登码清 token 跳登录页；
    「我的」页是这条链路的主要触发点（`fetchUserInfo`）。
-9. 日期不允许在未来：`recordDate` 与查询的 `endDate` 晚于今天返回 2002。
-   统计页结束日期 Picker 的 `end` 因此锁到 `todayStr()`，不再用 `DATE_MAX`（该常量已删）。
+9. 未来日期分两种口径：`recordDate` 晚于今天 → 2002（写入错误必须拦）；查询的 `endDate` 晚于今天 →
+   后端**收敛到今天**（不报错）。前端 `currentWeekRange()` / `currentMonthRange()` 也各自把末端夹到今天
+   （`utils/date.ts` 的 `clampEndToToday`），否则统计页「区间天数」会显示 7 天而数据只覆盖 5 天。
+   统计页结束日期 Picker 的 `end` 锁到 `todayStr()`，`DATE_MAX` 已删。
+   ⚠️ 上一轮就是在这里踩坑：后端硬拦未来 `endDate` 时，周五查「本周」返回 2002，
+   首页 `Promise.all` 整个 reject → 今日记录被清空并弹「结束日期不能晚于今天」。
+   **预设区间的末端在未来是正常形态，不要再去后端把它改成报错。**
 10. 查询跨度上限 **366 天**（`constants/validation.ts` 的 `MAX_QUERY_RANGE_DAYS` ↔
    后端 `DietRecordServiceImpl.MAX_QUERY_RANGE_DAYS`，超出返回 2003）：接口没有分页，
    跨度就是单次返回的行数。统计页开始日期 Picker 的 `start` 按结束日期倒推这个下界，

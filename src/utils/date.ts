@@ -77,16 +77,36 @@ export function endOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0)
 }
 
-/** 包含今天的一周（周一起始）。 */
-export function currentWeekRange(): DateRange {
-  const now = new Date()
-  return { startDate: formatDate(startOfWeek(now)), endDate: formatDate(endOfWeek(now)) }
+/**
+ * 把区间末端夹回今天。
+ *
+ * 为什么必须夹：「本周 / 本月」的自然末端天然落在未来（周五查本周，周日还没到）。
+ * 上一轮后端加了「endDate 不得在未来」的硬校验，实测直接把首页整个 Promise.all 打挂 ——
+ * 今日记录被清空，还弹一条「结束日期不能晚于今天」。后端现在改成收敛，
+ * 但前端仍然自己夹一遍：统计页的「区间天数」要与实际覆盖的天数一致，
+ * 否则周五的「本周」会显示 7 天，而数据只可能有 5 天。
+ */
+function clampEndToToday(range: DateRange): DateRange {
+  const dateText = todayStr()
+  return range.endDate > dateText ? { ...range, endDate: dateText } : range
 }
 
-/** 今天所在的月。 */
+/** 包含今天的一周（周一起始，末端不超过今天）。 */
+export function currentWeekRange(): DateRange {
+  const now = new Date()
+  return clampEndToToday({
+    startDate: formatDate(startOfWeek(now)),
+    endDate: formatDate(endOfWeek(now))
+  })
+}
+
+/** 今天所在的月（月初到今天，末端不超过今天）。 */
 export function currentMonthRange(): DateRange {
   const now = new Date()
-  return { startDate: formatDate(startOfMonth(now)), endDate: formatDate(endOfMonth(now)) }
+  return clampEndToToday({
+    startDate: formatDate(startOfMonth(now)),
+    endDate: formatDate(endOfMonth(now))
+  })
 }
 
 /** 最近 n 天（含今天）。 */
