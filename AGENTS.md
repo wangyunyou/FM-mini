@@ -1,12 +1,12 @@
 # FM-mini 项目指引
 
-微信小程序前端，Taro 4.2.1 + React 18 + TypeScript，只面向 weapp 一个平台。后端是同级目录 `../FM`（Spring Boot 3.2.5）。
+微信小程序前端，Taro 4.2.1 + React 18 + TypeScript，只面向 weapp 一个平台。后端是同级目录 `../FM-service`（Spring Boot 3.2.5）。
 
 ## 常用命令
 
 ```bash
 pnpm install
-pnpm dev:weapp     # watch 编译到 dist/，微信开发者工具导入本目录即可
+pnpm dev:weapp     # watch 编译到 dist/；微信开发者工具**导入 `dist/` 目录**（不是仓库根目录）
 pnpm build:weapp   # 生产编译
 pnpm typecheck     # tsc --noEmit，改完 TS 必跑
 pnpm lint          # eslint

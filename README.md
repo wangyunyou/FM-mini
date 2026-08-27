@@ -22,12 +22,14 @@ cat .env.development
 pnpm dev:weapp
 ```
 
-然后用**微信开发者工具**导入本目录（工具会读 `project.config.json`，`miniprogramRoot` 指向 `dist`）。
+然后用**微信开发者工具**导入 **`dist/` 目录**（Taro 会在 `dist/` 里生成自己的 `project.config.json`，`miniprogramRoot` 为 `"./"`）。
+
+> 仓库根目录也有一份 `project.config.json`，它只作为构建时的模板输入；**不要把根目录导入开发者工具**，否则工具会把个人设置写回这份入库文件。导入后工具在 `dist/` 下生成的 `project.private.config.json` 已被 `.gitignore` 忽略。
 
 后端需以 dev profile 启动，且开启微信登录 mock：
 
 ```bash
-cd ../FM
+cd ../FM-service
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
@@ -44,13 +46,13 @@ Taro 按 `.env` → `.env.<mode>` → `.env.local` → `.env.<mode>.local` 的�
 | `.env.development.local` | 否（被 `*.local` 忽略） | 真机联调的局域网 IP、开发者 AppID |
 | `.env.production.local` | 否 | 线上真实域名与 AppID（或改由 CI 注入） |
 
-两个模板文件里不得出现密钥；后端的 `JWT_SECRET` / `WX_SECRET` 属于 `../FM` 的 `.env`，已被那边忽略。
+两个模板文件里不得出现密钥；后端的 `JWT_SECRET` / `WX_SECRET` 属于 `../FM-service` 的 `.env`，已被那边忽略。
 
 ## 本地联调的两个必要条件
 
 | 条件 | 位置 | 说明 |
 |---|---|---|
-| 关闭域名校验 | 已在 `project.config.json` 里设 `setting.urlCheck: false` | 否则开发者工具会拦 `http://localhost:8080` |
+| 关闭域名校验 | 已在 `project.config.json` 里设 `setting.urlCheck: false` | 否则开发者工具会拦 `http://localhost:8080`；导入 `dist/` 后工具会另存一份到 `dist/project.private.config.json`，两处任一为 false 即可 |
 | 后端 CORS | FM 服务 `CORS_ALLOWED_ORIGIN_PATTERNS` | 小程序原生请求不走浏览器跨域，留空即可；只有 h5 调试才需要配 |
 
 真机预览时手机访问不到开发机的 localhost，需要把地址换成开发机的局域网 IP（写进 `.env.development.local`，不要改模板）并重新编译。
