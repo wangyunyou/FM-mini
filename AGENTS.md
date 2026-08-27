@@ -29,23 +29,46 @@ pnpm lint          # eslint
 | `types/api.ts` | `com.wyy.fm.dto.*` |
 | `constants/meal.ts` | `DietRecordResponse.getMealTypeName()`（1 早餐 2 午餐 3 晚餐 4 加餐） |
 | `constants/error-code.ts` | `com.wyy.fm.common.ErrorCode` |
-| `constants/validation.ts` | DTO 上的 `@Size/@Min/@Max` |
+| `constants/validation.ts` | DTO 上的 `@Size/@Min/@Max`（`CALORIES_MAX = 100000` ↔ `@Max(100000)`，两边同值） |
 
 后端必须知道的几点（每条都靠本地跑后端实测确认过）：
 
 1. `GET /api/diet/query` 返回的 `caloriesByMeal`，key 是**餐次中文名**，且只包含区间内出现过的餐次 —— 取值必须 `?? 0`。
 2. `PUT /api/diet/{id}` 的请求体**没有 `recordDate`**，编辑态改日期无效，所以编辑页锁住日期字段并给出说明。
 3. 后端**没有单条记录查询接口**，编辑页的原记录靠列表页写 storage 草稿（`utils/navigation.ts`），编辑页读后即清。
+   草稿读不到时**不能**退化成新增：`record-edit` 以路由 `?id=` 为编辑态的权威信号，
+   带 id 却没拿到草稿会进「数据已失效」兜底页（否则用户以为在改，实际 POST 出一条重复记录）。
 4. `calories` 传小数时后端会**静默截断**（12.5 -> 12）并返回 200，不报错，所以 `record-edit` 页必须自己卡 `Number.isInteger`。
 5. 「日均」在本项目里有**两套口径，而且是故意不同的**：
    - `avgCaloriesPerDay`（后端字段，statistics 页「日均 kcal」直接渲染）分母是**有记录的天数**（后端 2026-08-28 起，旧口径是区间总天数）。查整月只记 1 天时返回的是当天总量，而不是 `总量/31`。
    - 首页「本周日均 kcal」不走后端字段，是前端算的：`weekCalories / daysElapsedInWeek()`，分母是**本周已过天数**（周一=1…周日=7），用于「今日 vs 本周节奏」的进度条对比。
    别把首页也“顺手统一”成有记录天数 —— 记录少的日子会把日均顶得很高，今日对比和进度条直接失真。两个页面各自在 hero 底部用 `.fm-hero__note` 标了口径。
+6. **部分更新的置空口径**（`PUT /api/diet/{id}`、`PUT /api/user/info`）：不传 / `null` = 不改；
+   `remark` 传空串 `""` = 清空（库里存 NULL）；`foodName`/`nickname`/`avatarUrl` 传空串或纯空白 = 400。
+   `JSON.stringify` 会丢掉值为 `undefined` 的键，所以「清空备注」必须显式发空串 ——
+   实测省略键与传 `null` 都改不动原值，写错就是「备注永远清不掉」。
+7. `POST /api/user/wx-login` 的初始资料：后端**只在自己本次真的新建账号时**才写 `nickname`/`avatarUrl`/`gender`，
+   老用户重登一律忽略（微信现在只能给出固定默认昵称"微信用户"，照收会刷掉「我的」页里改的名字）。
+   登录页仍用 `auth.isFirstLogin()`（必须在写入新 token **之前** 调用）上报 `isNewUser`，
+   但它是**给后端对账用的提示，不是判据**（token 被清后老用户重登也会自报首登）；
+   要改资料一律走 `PUT /api/user/info`。
+8. `users.status = 1`（禁用）后端返回业务码 **1002**，`request` 层按重登码清 token 跳登录页；
+   「我的」页是这条链路的主要触发点（`fetchUserInfo`）。
+9. 日期不允许在未来：`recordDate` 与查询的 `endDate` 晚于今天返回 2002。
+   统计页结束日期 Picker 的 `end` 因此锁到 `todayStr()`，不再用 `DATE_MAX`（该常量已删）。
+10. 查询跨度上限 **366 天**（`constants/validation.ts` 的 `MAX_QUERY_RANGE_DAYS` ↔
+   后端 `DietRecordServiceImpl.MAX_QUERY_RANGE_DAYS`，超出返回 2003）：接口没有分页，
+   跨度就是单次返回的行数。统计页开始日期 Picker 的 `start` 按结束日期倒推这个下界，
+   用户选不出注定被拒的区间；提交前还有一道 `dayCount` 兜底（防"先选好再把结束日期往后拖"）。
 
 ## 鉴权
 
 - token 存 storage（`STORAGE_KEYS.TOKEN`），`request` 层注入 `Authorization: Bearer {token}`。
 - 失效不靠前端猜：后端 `AuthInterceptor` 会同时返回 HTTP 401 和 body `code: 401`，`request` 层清 token 并 `reLaunch` 登录页，且一次启动周期内只跳一次。
+- 「我的」页（`pages/profile`）是第三个 tabBar 页，负责 `GET/PUT /api/user/info` 与退出登录；
+  `utils/auth.ts` 的 `getCachedUserInfo`/`cacheUserInfo` 给它做秒开，`logout()` 是它唯一的退出入口。
+- 所有列表加载都带**请求序号守卫**（`requestSeqRef`）：只接受最后一次请求的结果，
+  并发（连点区间 tab、下拉刷新撞 useDidShow）时先发的后返回不会盖掉新数据。
 - app 启动时 `app.ts` 检查本地有无 token，没有就去登录页；页面 `useDidShow` 调 `ensureLoggedIn()` 兜住分享直达。
 
 ## 生命周期坑
