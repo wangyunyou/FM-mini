@@ -13,6 +13,9 @@ const COLOR_INACTIVE = [138, 143, 153] // #8a8f99
 const COLOR_ACTIVE = [31, 111, 84] // #1f6f54
 
 // ---------- PNG 编码 ----------
+/** gAMA 需为整数干分之一，1/2.2 约为 45455，sRGB 内容用这个值是惯例 */
+const gamma = Buffer.from([0, 0, 0xb1, 0x8f])
+
 const CRC_TABLE = (() => {
   const table = new Int32Array(256)
   for (let n = 0; n < 256; n++) {
@@ -49,6 +52,16 @@ function encodePng (width, height, rgba) {
   ihdr.writeUInt32BE(height, 4)
   ihdr[8] = 8 // bit depth
   ihdr[9] = 6 // RGBA
+
+  // sRGB 与 pHYs 按规范是可选的，但只发 IHDR/IDAT/IEND 的最小结构在部分严格的
+  // 图像管线（小程序开发者工具就是自己再编一遍图标）里属于“少见输入”，
+  // 补上这两个分块让产物与常规工具链输出一致。
+  const srgb = Buffer.from([0]) // 0 = Perceptual 渲染意图
+  const phys = Buffer.alloc(9)
+  phys.writeUInt32BE(2835, 0) // 72 DPI
+  phys.writeUInt32BE(2835, 4)
+  phys[8] = 1 // 单位：米
+
   const raw = Buffer.alloc(height * (1 + width * 4))
   let p = 0
   for (let y = 0; y < height; y++) {
@@ -64,6 +77,9 @@ function encodePng (width, height, rgba) {
   return Buffer.concat([
     sig,
     chunk('IHDR', ihdr),
+    chunk('gAMA', gamma),
+    chunk('sRGB', srgb),
+    chunk('pHYs', phys),
     chunk('IDAT', zlib.deflateSync(raw, { level: 9 })),
     chunk('IEND', Buffer.alloc(0))
   ])
