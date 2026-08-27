@@ -12,8 +12,8 @@ export enum MealType {
   Snack = 4
 }
 
-/** 未知餐次的兜底文案，与后端 default 分支一致。 */
-export const UNKNOWN_MEAL_NAME = '未知'
+/** 未知餐次的兜底文案，与后端 getMealTypeName 的 default 分支一致；仅供本文件的 mealTypeLabel 使用。 */
+const UNKNOWN_MEAL_NAME = '未知'
 
 /** 用于表单选择器与统计图表的固定展示顺序。 */
 export const MEAL_ORDER: MealType[] = [

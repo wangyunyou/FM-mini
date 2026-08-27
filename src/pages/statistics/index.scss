@@ -1,108 +1,129 @@
+/* 统计页特有样式；hero、卡片、进度条等通用件在 app.scss */
+
+/* 胶囊式区间切换 */
 .range-tabs {
   background-color: var(--fm-surface);
-  border-radius: var(--fm-radius);
+  border-radius: 999px;
+  box-shadow: var(--fm-shadow-sm);
   display: flex;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   padding: 8px;
 }
 
 .range-tabs__item {
-  border-radius: 10px;
-  color: var(--fm-text-weak);
+  border-radius: 999px;
+  color: var(--fm-text-secondary);
   flex: 1;
-  font-size: 26px;
-  line-height: 64px;
+  font-size: 25px;
+  line-height: 68px;
   text-align: center;
 }
 
 .range-tabs__item--active {
-  background-color: var(--fm-primary);
+  background: var(--fm-hero);
+  box-shadow: 0 6px 18px rgba(31, 111, 84, 0.28);
   color: #fff;
   font-weight: 600;
 }
 
-.custom-range {
+.stat-hero-value {
+  align-items: baseline;
   display: flex;
-  flex-wrap: wrap;
+  margin-top: 14px;
+  position: relative;
+  z-index: 1;
 }
 
-.custom-range__item {
+/* 自定义区间 */
+.custom-range__row {
+  align-items: flex-end;
+  display: flex;
+}
+
+.custom-range__picker {
   flex: 1;
-  min-width: 260px;
-  padding-right: 24px;
+}
+
+.custom-range__sep {
+  color: var(--fm-text-tertiary);
+  font-size: 22px;
+  margin: 0 18px 30px;
+}
+
+.custom-range__value {
+  background-color: var(--fm-surface-muted);
+  border-radius: var(--fm-radius);
+  display: block;
+  font-size: 26px;
+  font-weight: 500;
+  padding: 20px 12px;
+  text-align: center;
 }
 
 .custom-range__apply {
-  margin-top: 24px;
-  width: 100%;
-}
-
-.stat-grid {
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.stat-grid__item {
-  flex: 1 1 40%;
   margin-top: 32px;
 }
 
-.stat-grid__num {
-  color: var(--fm-primary);
-  display: block;
-  font-size: 40px;
-  font-weight: 600;
-}
-
-.stat-note {
-  display: block;
-  margin-top: 32px;
-}
-
+/* 餐次分布 */
 .meal-bar {
+  margin-top: 32px;
+}
+
+.meal-bar__head {
   align-items: center;
   display: flex;
-  margin-top: 28px;
+}
+
+.meal-bar__dot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 14px;
+  margin-right: 12px;
+  width: 14px;
 }
 
 .meal-bar__name {
-  color: var(--fm-text-weak);
-  flex-shrink: 0;
-  font-size: 24px;
-  width: 72px;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.meal-bar__value {
+  color: var(--fm-text-secondary);
+  font-size: 22px;
+  margin-left: auto;
 }
 
 .meal-bar__track {
-  background-color: var(--fm-bg);
-  border-radius: 8px;
-  flex: 1;
-  height: 16px;
-  margin: 0 16px;
+  background-color: var(--fm-surface-muted);
+  border-radius: 999px;
+  height: 14px;
+  margin-top: 16px;
   overflow: hidden;
 }
 
 .meal-bar__fill {
-  background-color: var(--fm-primary);
-  border-radius: 8px;
+  border-radius: 999px;
   height: 100%;
+  transition: width 0.35s ease;
 }
 
-.meal-bar__value {
-  flex-shrink: 0;
-  font-size: 24px;
-  text-align: right;
-  width: 110px;
-}
-
+/* 明细 */
 .detail-group {
-  margin-top: 24px;
+  margin-top: 32px;
+}
+
+.detail-group__head {
+  align-items: center;
+  display: flex;
 }
 
 .detail-group__date {
-  border-bottom: 1px solid var(--fm-border);
-  color: var(--fm-text-weak);
-  display: block;
-  font-size: 24px;
-  padding-bottom: 12px;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.detail-group__count {
+  color: var(--fm-text-tertiary);
+  font-size: 22px;
+  margin-left: 14px;
 }

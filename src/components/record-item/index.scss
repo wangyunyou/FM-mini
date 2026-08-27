@@ -2,12 +2,21 @@
   align-items: center;
   border-bottom: 1px solid var(--fm-border);
   display: flex;
-  justify-content: space-between;
-  padding: 24px 0;
+  padding: 26px 0;
 }
 
 .record-item:last-child {
   border-bottom: none;
+  padding-bottom: 8px;
+}
+
+/* 左侧餐次色条：与统计页分布条同色，一眼能对应上 */
+.record-item__bar {
+  border-radius: 999px;
+  flex-shrink: 0;
+  height: 58px;
+  margin-right: 22px;
+  width: 8px;
 }
 
 .record-item__main {
@@ -15,33 +24,25 @@
   min-width: 0;
 }
 
-.record-item__head {
-  align-items: center;
-  display: flex;
-}
-
 .record-item__name {
-  font-size: 28px;
+  font-size: 30px;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .record-item__sub {
-  display: flex;
   margin-top: 8px;
+  overflow: hidden;
 }
 
-.record-item__remark {
-  flex: 1;
-  min-width: 0;
+.record-item__sub-text {
+  color: var(--fm-text-tertiary);
+  font-size: 23px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.record-item__sub .record-item__remark {
-  margin-left: 16px;
 }
 
 .record-item__calories {
@@ -52,7 +53,13 @@
 }
 
 .record-item__calories-num {
-  color: var(--fm-primary);
-  font-size: 32px;
+  color: var(--fm-text);
+  font-size: 34px;
   font-weight: 600;
+}
+
+.record-item__calories-unit {
+  color: var(--fm-text-tertiary);
+  font-size: 21px;
+  margin-left: 6px;
 }

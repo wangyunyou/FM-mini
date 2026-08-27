@@ -1,10 +1,10 @@
 import { useState } from 'react'
 
-import { Button, Input, Picker, Textarea, View } from '@tarojs/components'
-import Taro, { useRouter } from '@tarojs/taro'
+import { Button, Input, Picker, Text, Textarea, View } from '@tarojs/components'
+import Taro, { useLoad, useRouter } from '@tarojs/taro'
 
 import { createDietRecord, deleteDietRecord, updateDietRecord } from '@/api/diet'
-import { MEAL_NAME_BY_TYPE, MEAL_ORDER, type MealType } from '@/constants/meal'
+import { MEAL_NAME_BY_TYPE, MEAL_ORDER, mealColor, type MealType } from '@/constants/meal'
 import { ROUTES } from '@/constants/route'
 import {
   CALORIES_MAX,
@@ -13,7 +13,7 @@ import {
   REMARK_MAX
 } from '@/constants/validation'
 import type { DietRecordResponse } from '@/types/api'
-import { parseDate, todayStr } from '@/utils/date'
+import { dayOffsetStr, parseDate, todayStr } from '@/utils/date'
 import { confirm, toast, toastSuccess } from '@/utils/feedback'
 import { readStorage, removeStorage, STORAGE_KEYS } from '@/utils/storage'
 
@@ -27,6 +27,16 @@ interface DietFormValues {
   calories: number
   remark?: string
 }
+
+/** 热量快捷加数：绝大多数一餐落在这个量级里，点几下比打字快。 */
+const CALORIES_STEPS = [100, 200, 300, 500]
+
+/** 日期快捷项，超过两项就交给 Picker 选。 */
+const DATE_SHORTCUTS = [
+  { label: '今天', offset: 0 },
+  { label: '昨天', offset: -1 },
+  { label: '前天', offset: -2 }
+]
 
 /**
  * 读出列表页写下的草稿。
@@ -73,6 +83,13 @@ export default function RecordEditPage() {
   )
   const [remark, setRemark] = useState(draft?.remark ?? '')
   const [submitting, setSubmitting] = useState(false)
+
+  // 同一页面承担新增与编辑两种形态，导航标跟着切换，避免用户不确定自己在改哪条
+  useLoad(() => {
+    Taro.setNavigationBarTitle({ title: isEdit ? '编辑记录' : '记一笔' }).catch((error) => {
+      console.error('[record-edit] 设置导航标失败:', error)
+    })
+  })
 
   /** 逐条对齐后端校验规则，任一不合法就提示并返回 null。 */
   function buildValues(): DietFormValues | null {
@@ -188,19 +205,30 @@ export default function RecordEditPage() {
     }
   }
 
+  /** 快捷加数只改输入框内容，整数与上下限仍走 buildValues 那一套校验。 */
+  function addCaloriesStep(step: number) {
+    const current = Number(caloriesText.trim())
+    const base = Number.isFinite(current) && current > 0 ? current : 0
+    setCaloriesText(String(base + step))
+  }
+
   return (
-    <View className='fm-page'>
+    <View className='fm-page edit-page'>
       <View className='fm-card'>
         <View className='fm-field'>
           <View className='fm-field__label'>餐次</View>
-          <Picker
-            mode='selector'
-            range={MEAL_ORDER.map((mealType) => MEAL_NAME_BY_TYPE[mealType])}
-            value={mealIndex}
-            onChange={(event) => setMealIndex(Number(event.detail.value))}
-          >
-            <View className='fm-picker'>{MEAL_NAME_BY_TYPE[MEAL_ORDER[mealIndex] ?? MEAL_ORDER[0]]}</View>
-          </Picker>
+          <View className='fm-chips fm-chips--grid'>
+            {MEAL_ORDER.map((mealType, index) => (
+              <View
+                key={mealType}
+                className={`fm-chip edit-chip${index === mealIndex ? ' fm-chip--active' : ''}`}
+                onClick={() => setMealIndex(index)}
+              >
+                <View className='edit-chip__dot' style={{ backgroundColor: mealColor(mealType) }} />
+                {MEAL_NAME_BY_TYPE[mealType]}
+              </View>
+            ))}
+          </View>
         </View>
 
         <View className='fm-field'>
@@ -208,19 +236,36 @@ export default function RecordEditPage() {
           {isEdit ? (
             <View>
               <View className='fm-picker fm-picker--locked'>{dateText}</View>
-              <View className='fm-weak edit-date-tip'>
+              <View className='fm-weak edit-tip'>
                 后端更新接口不支持修改日期；需要换日期请删除后重新记录。
               </View>
             </View>
           ) : (
-            <Picker
-              mode='date'
-              end={todayStr()}
-              value={dateText}
-              onChange={(event) => setDateText(event.detail.value)}
-            >
-              <View className='fm-picker'>{dateText}</View>
-            </Picker>
+            <View>
+              <View className='fm-chips fm-chips--grid'>
+                {DATE_SHORTCUTS.map((shortcut) => (
+                  <View
+                    key={shortcut.offset}
+                    className={`fm-chip edit-chip${dayOffsetStr(shortcut.offset) === dateText ? ' fm-chip--active' : ''}`}
+                    onClick={() => setDateText(dayOffsetStr(shortcut.offset))}
+                  >
+                    {shortcut.label}
+                  </View>
+                ))}
+              </View>
+              <Picker
+                className='edit-date-picker'
+                end={todayStr()}
+                mode='date'
+                value={dateText}
+                onChange={(event) => setDateText(event.detail.value)}
+              >
+                <View className='fm-picker edit-date-value'>
+                  <Text className='edit-date-value__text'>{dateText}</Text>
+                  <Text className='edit-date-value__hint'>选其他日期</Text>
+                </View>
+              </Picker>
+            </View>
           )}
         </View>
 
@@ -237,17 +282,38 @@ export default function RecordEditPage() {
 
         <View className='fm-field'>
           <View className='fm-field__label'>热量（kcal）</View>
-          <Input
-            className='fm-input'
-            placeholder='例如 320'
-            type='number'
-            value={caloriesText}
-            onInput={(event) => setCaloriesText(event.detail.value)}
-          />
+          <View className='calories-row'>
+            <Input
+              className='fm-input calories-input'
+              placeholder='例如 320'
+              type='number'
+              value={caloriesText}
+              onInput={(event) => setCaloriesText(event.detail.value)}
+            />
+            {caloriesText ? (
+              <View className='calories-clear' onClick={() => setCaloriesText('')}>
+                清空
+              </View>
+            ) : null}
+          </View>
+          <View className='fm-chips fm-chips--grid calories-steps'>
+            {CALORIES_STEPS.map((step) => (
+              <View key={step} className='fm-chip calorie-step' onClick={() => addCaloriesStep(step)}>
+                +{step}
+              </View>
+            ))}
+          </View>
         </View>
 
         <View className='fm-field'>
-          <View className='fm-field__label'>备注（选填）</View>
+          <View className='fm-field__label edit-label'>
+            备注（选填）
+            <Text className='counter'>
+              {remark.length}
+              /
+              {REMARK_MAX}
+            </Text>
+          </View>
           <Textarea
             className='fm-input fm-textarea'
             maxlength={REMARK_MAX}
@@ -255,28 +321,25 @@ export default function RecordEditPage() {
             value={remark}
             onInput={(event) => setRemark(event.detail.value)}
           />
-          <View className='fm-weak counter'>
-            {remark.length}
-            /
-            {REMARK_MAX}
-          </View>
         </View>
       </View>
 
-      <Button
-        className='fm-btn fm-btn--primary'
-        disabled={submitting}
-        loading={submitting}
-        onClick={handleSubmit}
-      >
-        {submitting ? '保存中…' : isEdit ? '保存修改' : '记下这一笔'}
-      </Button>
-
       {isEdit ? (
-        <Button className='fm-btn fm-btn--danger edit-delete' disabled={submitting} onClick={handleDelete}>
+        <View className='edit-delete' onClick={handleDelete}>
           删除这条记录
-        </Button>
+        </View>
       ) : null}
+
+      <View className='edit-actionbar'>
+        <Button
+          className='fm-btn fm-btn--primary'
+          disabled={submitting}
+          loading={submitting}
+          onClick={handleSubmit}
+        >
+          {submitting ? '保存中…' : isEdit ? '保存修改' : '记下这一笔'}
+        </Button>
+      </View>
     </View>
   )
 }

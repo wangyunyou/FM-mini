@@ -1,28 +1,99 @@
+/* 登录页：整屏渐变头 + 上浮卡片，所以不用通用 .fm-page 的留白 */
+
 .login-page {
-  padding-top: 120px;
+  background-color: var(--fm-bg);
+  min-height: 100vh;
 }
 
 .login-hero {
-  margin-bottom: 48px;
-  padding: 0 12px;
+  /* 用竖向渐变而不是通用的 135° 斜渐变：顶部是一条纯色水平边，
+     才能和同样取色的导航栏无缝相接（斜渐变会在交界处留一条斜印）*/
+  background: linear-gradient(180deg, var(--fm-primary-bright) 0%, var(--fm-primary) 100%);
+  border-radius: 0 0 48px 48px;
+  overflow: hidden;
+  padding: 130px 48px 150px;
+  position: relative;
+}
+
+/* 两团装饰光斑，避免大色块显得空 */
+.login-hero::before {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  content: '';
+  height: 380px;
+  left: -140px;
+  position: absolute;
+  top: -120px;
+  width: 380px;
+}
+
+.login-hero::after {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  content: '';
+  height: 260px;
+  position: absolute;
+  right: -90px;
+  top: 140px;
+  width: 260px;
+}
+
+.login-hero__brand {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 28px;
+  color: #fff;
+  display: flex;
+  font-size: 38px;
+  font-weight: 700;
+  height: 96px;
+  justify-content: center;
+  letter-spacing: -1px;
+  position: relative;
+  width: 96px;
+  z-index: 1;
 }
 
 .login-hero__title {
-  font-size: 52px;
-  font-weight: 600;
+  color: #fff;
+  font-size: 54px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-top: 40px;
+  position: relative;
+  z-index: 1;
 }
 
 .login-hero__desc {
-  color: var(--fm-text-weak);
+  color: rgba(255, 255, 255, 0.82);
   font-size: 26px;
-  margin-top: 12px;
+  margin-top: 14px;
+  position: relative;
+  z-index: 1;
 }
 
-.login-submit {
-  width: 100%;
+/* 卡片压住渐变头下沿，形成层次 */
+.login-body {
+  margin-top: -96px;
+  padding: 0 32px 60px;
+  position: relative;
+  z-index: 2;
+}
+
+.login-card {
+  box-shadow: var(--fm-shadow);
+  margin-bottom: 36px;
 }
 
 .login-tip {
+  background-color: var(--fm-primary-weak);
+  border-radius: var(--fm-radius);
   margin-top: 32px;
-  padding: 0 12px;
+  padding: 26px 28px;
+}
+
+.login-tip__text {
+  color: var(--fm-text-secondary);
+  font-size: 22px;
+  line-height: 1.65;
 }

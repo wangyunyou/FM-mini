@@ -1,23 +1,63 @@
-.summary-card {
+/* 首页特有样式；卡片、hero、进度条等通用件在 app.scss */
+
+.hero-value {
+  align-items: baseline;
   display: flex;
-  justify-content: space-between;
+  margin-top: 14px;
+  position: relative;
+  z-index: 1;
 }
 
-.summary-card__main {
-  flex: 1;
-  min-width: 0;
+.hero-compare {
+  margin-top: 32px;
+  position: relative;
+  z-index: 1;
 }
 
-.summary-card__side {
-  flex-shrink: 0;
-  margin-left: 24px;
-  text-align: right;
-}
-
-.summary-card__side-num {
-  color: var(--fm-primary);
+.hero-compare__text {
+  color: rgba(255, 255, 255, 0.78);
   display: block;
-  font-size: 30px;
+  font-size: 23px;
+  margin-top: 16px;
+}
+
+.fm-empty__hint {
+  color: var(--fm-text-tertiary);
+  font-size: 23px;
+  margin-top: 10px;
+}
+
+/* 餐次分组标题行 */
+.meal-group {
+  margin-top: 12px;
+}
+
+.meal-group__head {
+  align-items: center;
+  display: flex;
+  margin-top: 24px;
+}
+
+.meal-group__dot {
+  border-radius: 50%;
+  height: 16px;
+  margin-right: 14px;
+  width: 16px;
+}
+
+.meal-group__name {
+  font-size: 27px;
   font-weight: 600;
-  margin-top: 8px;
+}
+
+.meal-group__count {
+  color: var(--fm-text-tertiary);
+  font-size: 22px;
+  margin-left: 14px;
+}
+
+.meal-group__sum {
+  color: var(--fm-text-secondary);
+  font-size: 22px;
+  margin-left: auto;
 }

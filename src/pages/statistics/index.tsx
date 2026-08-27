@@ -5,7 +5,7 @@ import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
 
 import { queryDietRecords } from '@/api/diet'
 import RecordItem from '@/components/record-item'
-import { MEAL_NAME_BY_TYPE, MEAL_ORDER } from '@/constants/meal'
+import { MEAL_NAME_BY_TYPE, MEAL_ORDER, mealColor } from '@/constants/meal'
 import { DATE_MAX, DATE_MIN } from '@/constants/validation'
 import type { DietStatisticsResponse } from '@/types/api'
 import { ensureLoggedIn } from '@/utils/auth'
@@ -123,94 +123,119 @@ export default function StatisticsPage() {
 
       {rangeKey === 'custom' ? (
         <View className='fm-card custom-range'>
-          <Picker
-            className='custom-range__item'
-            end={endDate}
-            mode='date'
-            start={DATE_MIN}
-            value={startDate}
-            onChange={(event) => setStartDate(event.detail.value)}
-          >
-            <View className='fm-field__label'>开始日期</View>
-            <View className='fm-picker'>{startDate}</View>
-          </Picker>
-          <Picker
-            className='custom-range__item'
-            end={DATE_MAX}
-            mode='date'
-            start={startDate}
-            value={endDate}
-            onChange={(event) => setEndDate(event.detail.value)}
-          >
-            <View className='fm-field__label'>结束日期</View>
-            <View className='fm-picker'>{endDate}</View>
-          </Picker>
+          <View className='custom-range__row'>
+            <Picker
+              className='custom-range__picker'
+              end={endDate}
+              mode='date'
+              start={DATE_MIN}
+              value={startDate}
+              onChange={(event) => setStartDate(event.detail.value)}
+            >
+              <Text className='fm-field__label'>开始日期</Text>
+              <Text className='custom-range__value'>{startDate}</Text>
+            </Picker>
+            <Text className='custom-range__sep'>至</Text>
+            <Picker
+              className='custom-range__picker'
+              end={DATE_MAX}
+              mode='date'
+              start={startDate}
+              value={endDate}
+              onChange={(event) => setEndDate(event.detail.value)}
+            >
+              <Text className='fm-field__label'>结束日期</Text>
+              <Text className='custom-range__value'>{endDate}</Text>
+            </Picker>
+          </View>
           <View
             className='fm-btn fm-btn--primary custom-range__apply'
             onClick={() => handleTabChange('custom')}
           >
-            查询
+            查询该区间
           </View>
         </View>
       ) : null}
 
-      <View className='fm-card'>
-        <View className='fm-row fm-row--between fm-section-head'>
-          <Text className='fm-title'>区间概览</Text>
-          <Text className='fm-weak'>{activeRange.startDate} ~ {activeRange.endDate}</Text>
+      <View className='fm-hero'>
+        <Text className='fm-hero__label'>
+          {activeRange.startDate} 至 {activeRange.endDate}
+        </Text>
+        <View className='stat-hero-value'>
+          <Text className='fm-num'>{totalCalories}</Text>
+          <Text className='fm-unit'>kcal</Text>
         </View>
-        <View className='stat-grid'>
-          <View className='stat-grid__item'>
-            <Text className='stat-grid__num'>{totalCalories}</Text>
-            <Text className='fm-weak'>总热量 kcal</Text>
+        <View className='fm-hero__stats'>
+          <View className='fm-hero__stat'>
+            <Text className='fm-hero__stat-num'>{stats?.recordCount ?? 0}</Text>
+            <Text className='fm-hero__stat-label'>记录条数</Text>
           </View>
-          <View className='stat-grid__item'>
-            <Text className='stat-grid__num'>{stats?.recordCount ?? 0}</Text>
-            <Text className='fm-weak'>记录条数</Text>
+          <View className='fm-hero__stat'>
+            <Text className='fm-hero__stat-num'>{stats?.avgCaloriesPerDay ?? 0}</Text>
+            <Text className='fm-hero__stat-label'>日均 kcal</Text>
           </View>
-          <View className='stat-grid__item'>
-            <Text className='stat-grid__num'>{stats?.avgCaloriesPerDay ?? 0}</Text>
-            <Text className='fm-weak'>日均 kcal</Text>
-          </View>
-          <View className='stat-grid__item'>
-            <Text className='stat-grid__num'>{dayCount(activeRange)}</Text>
-            <Text className='fm-weak'>区间天数</Text>
+          <View className='fm-hero__stat'>
+            <Text className='fm-hero__stat-num'>{dayCount(activeRange)}</Text>
+            <Text className='fm-hero__stat-label'>区间天数</Text>
           </View>
         </View>
-        <Text className='fm-weak stat-note'>日均按区间天数计算，与后端 avgCaloriesPerDay 口径一致。</Text>
       </View>
 
       <View className='fm-card'>
-        <Text className='fm-title'>按餐次分布</Text>
+        <View className='fm-row fm-row--between fm-section-head'>
+          <Text className='fm-title'>按餐次分布</Text>
+          <Text className='fm-tertiary'>日均按区间天数计</Text>
+        </View>
         {totalCalories > 0 ? (
           MEAL_ORDER.map((mealType) => {
             const name = MEAL_NAME_BY_TYPE[mealType]
             const calories = caloriesByMeal[name] ?? 0
+            const color = mealColor(mealType)
             const percent = Math.min(100, Math.round((calories / totalCalories) * 100))
             return (
               <View className='meal-bar' key={name}>
-                <Text className='meal-bar__name'>{name}</Text>
-                <View className='meal-bar__track'>
-                  <View className='meal-bar__fill' style={{ width: `${percent}%` }} />
+                <View className='meal-bar__head'>
+                  <View className='meal-bar__dot' style={{ backgroundColor: color }} />
+                  <Text className='meal-bar__name'>{name}</Text>
+                  <Text className='meal-bar__value'>
+                    {calories} kcal · {percent}%
+                  </Text>
                 </View>
-                <Text className='meal-bar__value'>{calories}</Text>
+                <View className='meal-bar__track'>
+                  <View
+                    className='meal-bar__fill'
+                    style={{ backgroundColor: color, width: `${percent}%` }}
+                  />
+                </View>
               </View>
             )
           })
         ) : (
-          <View className='fm-empty'>该区间还没有记录</View>
+          <View className='fm-empty'>
+            <Text className='fm-empty__icon'>📊</Text>
+            <View>该区间还没有记录</View>
+          </View>
         )}
       </View>
 
       <View className='fm-card'>
-        <Text className='fm-title'>记录明细</Text>
-        {loading && records.length === 0 ? <View className='fm-empty'>加载中…</View> : null}
-        {!loading && groups.length === 0 ? <View className='fm-empty'>暂无记录</View> : null}
+        <View className='fm-row fm-row--between fm-section-head'>
+          <Text className='fm-title'>记录明细</Text>
+          <Text className='fm-tertiary'>{records.length} 条</Text>
+        </View>
+        {loading && records.length === 0 ? <View className='fm-loading'>加载中…</View> : null}
+        {!loading && groups.length === 0 ? (
+          <View className='fm-empty'>
+            <Text className='fm-empty__icon'>🗒</Text>
+            <View>暂无记录</View>
+          </View>
+        ) : null}
         {groups.map((group) => (
           <View className='detail-group' key={group.date}>
-            <Text className='detail-group__date'>
-              {formatDateLabel(group.date)} · {group.items.length} 条
-            </Text>
+            <View className='detail-group__head'>
+              <Text className='detail-group__date'>{formatDateLabel(group.date)}</Text>
+              <Text className='detail-group__count'>{group.items.length} 条</Text>
+            </View>
             {group.items.map((record) => (
               <RecordItem key={record.id} record={record} />
             ))}

@@ -1,21 +1,116 @@
+/* 编辑页特有样式 */
+
+.edit-page {
+  /* 底部固定操作栏会挡住内容，这里多留一截 */
+  padding-bottom: 240px;
+  padding-bottom: calc(240px + env(safe-area-inset-bottom));
+}
+
+/* 胶囊里的餐次色点 */
+.edit-chip {
+  align-items: center;
+  display: flex;
+  font-size: 26px;
+  min-width: 0;
+}
+
+.edit-chip__dot {
+  border-radius: 50%;
+  height: 14px;
+  margin-right: 12px;
+  width: 14px;
+}
+
+.edit-tip {
+  margin-top: 14px;
+}
+
+.edit-date-picker {
+  display: block;
+  margin-top: 20px;
+}
+
+.edit-date-value {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.edit-date-value__text {
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.edit-date-value__hint {
+  color: var(--fm-text-tertiary);
+  font-size: 22px;
+}
+
+/* 热量：输入框 + 清空 */
+.calories-row {
+  align-items: center;
+  display: flex;
+}
+
+.calories-input {
+  flex: 1;
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+
+.calories-clear {
+  color: var(--fm-text-tertiary);
+  flex-shrink: 0;
+  font-size: 24px;
+  margin-left: 20px;
+  padding: 12px 4px;
+}
+
+.calories-steps {
+  margin-top: 20px;
+}
+
+.calorie-step {
+  font-size: 25px;
+  line-height: 64px;
+  min-width: 0;
+  padding: 0 30px;
+}
+
 .fm-textarea {
-  min-height: 180px;
+  min-height: 190px;
+}
+
+/* 备注行：标题居左、计数器靠右，用 flex 而不是 float（小程序里 float 行高计算不稳定） */
+.edit-label {
+  align-items: center;
+  display: flex;
 }
 
 .counter {
-  margin-top: 8px;
-  text-align: right;
+  color: var(--fm-text-tertiary);
+  font-size: 22px;
+  font-weight: 400;
+  margin-left: auto;
 }
 
-.edit-date-tip {
-  margin-top: 12px;
-}
-
-.fm-picker--locked {
-  color: var(--fm-text-weak);
-}
-
+/* 删除：弱化成一行文字按钮，避免和主按钮抢注意力 */
 .edit-delete {
-  margin-top: 24px;
-  width: 100%;
+  color: var(--fm-accent-danger);
+  font-size: 26px;
+  margin-top: 8px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.edit-actionbar {
+  background: linear-gradient(180deg, rgba(243, 245, 244, 0) 0%, var(--fm-bg) 42%);
+  bottom: 0;
+  left: 0;
+  padding: 32px 32px 28px;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  position: fixed;
+  right: 0;
+  z-index: 20;
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Button, Input, Picker, View } from '@tarojs/components'
+import { Button, Input, Text, View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 
 import { ROUTES } from '@/constants/route'
@@ -46,48 +46,57 @@ export default function LoginPage() {
   }
 
   return (
-    <View className='fm-page login-page'>
+    <View className='login-page'>
       <View className='login-hero'>
+        <View className='login-hero__brand'>FM</View>
         <View className='login-hero__title'>FM 饮食记录</View>
         <View className='login-hero__desc'>每天记一笔，热量和餐次都留得住</View>
       </View>
 
-      <View className='fm-card'>
-        <View className='fm-field'>
-          <View className='fm-field__label'>昵称（选填，登录后也可修改）</View>
-          <Input
-            className='fm-input'
-            maxlength={NICKNAME_MAX}
-            placeholder='给自己起个名字'
-            value={nickname}
-            onInput={(event) => setNickname(event.detail.value)}
-          />
+      <View className='login-body'>
+        <View className='fm-card login-card'>
+          <View className='fm-field'>
+            <View className='fm-field__label'>昵称（选填，登录后也可修改）</View>
+            <Input
+              className='fm-input'
+              maxlength={NICKNAME_MAX}
+              placeholder='给自己起个名字'
+              value={nickname}
+              onInput={(event) => setNickname(event.detail.value)}
+            />
+          </View>
+
+          <View className='fm-field'>
+            <View className='fm-field__label'>性别（选填）</View>
+            <View className='fm-chips'>
+              {GENDER_OPTIONS.map((option, index) => (
+                <View
+                  key={option.value}
+                  className={`fm-chip${index === genderIndex ? ' fm-chip--active' : ''}`}
+                  onClick={() => setGenderIndex(index)}
+                >
+                  {option.label}
+                </View>
+              ))}
+            </View>
+          </View>
         </View>
 
-        <View className='fm-field'>
-          <View className='fm-field__label'>性别（选填）</View>
-          <Picker
-            mode='selector'
-            range={GENDER_OPTIONS.map((option) => option.label)}
-            value={genderIndex}
-            onChange={(event) => setGenderIndex(Number(event.detail.value))}
-          >
-            <View className='fm-picker'>{GENDER_OPTIONS[genderIndex]?.label ?? '不填'}</View>
-          </Picker>
+        <Button
+          className='fm-btn fm-btn--primary'
+          disabled={submitting}
+          loading={submitting}
+          onClick={handleSubmit}
+        >
+          {submitting ? '登录中…' : '微信一键登录'}
+        </Button>
+
+        <View className='login-tip'>
+          <Text className='login-tip__text'>
+            登录仅用于创建你的饮食档案。本地联调需 FM 服务以 dev profile 启动，该环境已开启微信登录
+            mock，没有真实 AppID 也能完整跑通。
+          </Text>
         </View>
-      </View>
-
-      <Button
-        className='fm-btn fm-btn--primary login-submit'
-        disabled={submitting}
-        loading={submitting}
-        onClick={handleSubmit}
-      >
-        {submitting ? '登录中…' : '微信一键登录'}
-      </Button>
-
-      <View className='fm-weak login-tip'>
-        登录仅用于创建你的饮食档案；本地联调需 FM 服务以 dev profile 启动（已开启微信登录 mock）。
       </View>
     </View>
   )
