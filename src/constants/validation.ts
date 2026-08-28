@@ -3,19 +3,18 @@
  *
  * 后端位置：src/main/java/com/wyy/fm/dto/
  * 前端先按同一套规则挡一遍，避免把注定 400 的请求发出去；改后端上限时必须同步这里。
+ *
+ * 边界（重要）：本文件只镜像**前端真正会拦的那几条**，不是后端注解的全量清单。
+ * 后端有约束但这里没列的三项，约束由别的机制保证，不靠常量：
+ * - avatarUrl 长度 512：本页没有头像上传入口（理由见 pages/profile/index.tsx 文件头）
+ * - 餐次 1-4：值只能从 MEAL_ORDER 按下标取，天然越不了界
+ * - 性别 0-2：走 genderByIndex，越界已回落「不填」
+ * 历史上这三项也建过镜像常量，但全仓零引用（只写不读），已删；
+ * 真的出现需要它们的入口时，再连着校验逻辑一起加，不要只加常量。
  */
 
 /** 昵称最长 64（WxLoginRequest / UpdateUserRequest 的 @Size(max = 64)）。 */
 export const NICKNAME_MAX = 64
-
-/**
- * 头像 URL 最长 512。
- *
- * ⚠️ 目前**无代码引用**：本页没有头像上传（理由见 pages/profile/index.tsx 文件头），
- * 留着是因为本文件的定位是「后端校验注解的镜像清单」，删了反而看不出 DTO 上有什么。
- * 真要启用上传时记得把这里接进校验，否则只能靠后端 400 接住。
- */
-export const AVATAR_URL_MAX = 512
 
 /**
  * 食物名称最长 200，且不能为空（后端对齐 diet_records.food_name 的 VARCHAR(200)）。
@@ -34,23 +33,6 @@ export const CALORIES_MIN = 0
  * 与后端 Create/UpdateDietRecordRequest 的 @Max(100000) 是一对，改一处必须同步另一处。
  */
 export const CALORIES_MAX = 100000
-
-/**
- * 餐次取值 1-4。
- *
- * ⚠️ 目前**无代码引用**：餐次都从 MEAL_ORDER 里按下标取，天然不会越界，所以没地方需要它们。
- * 留着当后端 `@Min(1)/@Max(4)` 的镜像；改动时两边一起动。
- */
-export const MEAL_TYPE_MIN = 1
-export const MEAL_TYPE_MAX = 4
-
-/**
- * 性别取值 0-2。
- *
- * ⚠️ 同 MEAL_TYPE_*：无引用（性别走 genderByIndex，越界已回落「不填」），仅作后端契约镜像。
- */
-export const GENDER_MIN = 0
-export const GENDER_MAX = 2
 
 /**
  * 日期选择器可选下界（服务上线前的日期不受理）。
