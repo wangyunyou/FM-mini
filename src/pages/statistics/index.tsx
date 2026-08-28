@@ -17,7 +17,8 @@
  *   startDate/endDate → 自定义表单里**输入中**的值，不代表已生效
  *   activeRange(+Ref) → **已生效**的区间：前者给渲染、后者给生命周期钩子
  *   stats / loading  ← loadStats(range)
- *   触发 loadStats 的四个入口：tab 点击、 「查询该区间」按钮、useDidShow、下拉刷新
+ *   触发 loadStats 的四个入口：tab 点击（预设）、 「查询该区间」按钮、useDidShow、下拉刷新
+ *   自定义表单的展开与否走 customOpen，与 rangeKey 高亮相互独立（前者是意图、后者是已生效结果）
  *   派生值：minStart（useMemo，按 endDate 倒推）与渲染前的 records/totalCalories/caloriesByMeal/groups
  */
 import { useCallback, useMemo, useRef, useState } from 'react'
@@ -76,6 +77,16 @@ const PRESET_RANGES: Record<Exclude<RangeKey, 'custom'>, () => DateRange> = {
 export default function StatisticsPage() {
   /** 当前选中的 tab（只在请求成功后才切，见 applyRange） */
   const [rangeKey, setRangeKey] = useState<RangeKey>('week')
+  /**
+   * 自定义表单是否展开。
+   *
+   * 与 rangeKey 分开是有意的：表单只是「用户想自己挑区间」这个**意图**，
+   * 与拿不拿得到数据无关。以前渲染条件直接用 rangeKey === 'custom'，
+   * 而 rangeKey 只在请求成功后才变，于是点「自定义」会先发一次查询，
+   * 查询失败（断网、地址未配）时表单根本不弹出来，表现为「点了没反应」。
+   * 现在可见性走本状态，查询交给表单里的「查询该区间」按钮。
+   */
+  const [customOpen, setCustomOpen] = useState(false)
   /**
    * 自定义区间的两个输入框当前值（草稿性质，不代表已生效）。
    *
@@ -161,12 +172,19 @@ export default function StatisticsPage() {
    * 这里不做乐观更新是有意的：本页的 tab 本质上是「你正在看哪段时间」的表头，
    * 而不只是一个待完成的操作。
    *
+   * 收到成功分支里还顺带保住了一条不变量：customOpen 只在新区间真生效时才跟着变，
+   * 所以不会出现「rangeKey 仍是 custom（数据还在自定义区间）但表单已被收起」。
+   *
    * @param key 准备高亮的 tab（与 range 成对传入，不允许“查 A 区间却亮 B tab”）
    */
   async function applyRange(key: RangeKey, range: DateRange) {
     const ok = await loadStats(range)
     if (ok) {
       setRangeKey(key)
+      // 自定义提交后保持展开（用户多半还要调日期再查一次），只有切到预设区间才收起表单
+      if (key !== 'custom') {
+        setCustomOpen(false)
+      }
     }
   }
 
@@ -182,12 +200,27 @@ export default function StatisticsPage() {
     return bySpan > DATE_MIN ? bySpan : DATE_MIN
   }, [endDate])
 
-  /** tab 切换与「查询该区间」按钮的唯一入口。 */
+  /** tab 点击的唯一入口：预设 tab 查、自定义 tab 只展开表单。 */
   function handleTabChange(key: RangeKey) {
-    if (key !== 'custom') {
-      void applyRange(key, PRESET_RANGES[key]())
+    if (key === 'custom') {
+      // 只展开，不发请求：此刻 startDate/endDate 还是「输入中」的值，
+      // 拿它们先查一次既没意义（用户可能还要改），又会让失败遮住表单本身
+      setCustomOpen(true)
       return
     }
+    // 选了预设区间时不在这里收表单，而是交给 applyRange 在“新区间真的生效”那一步收：
+    // 先收的话，一旦预设查询失败（高亮与数据都停在自定义区间），
+    // 就会剩下「tab 亮着自定义、表单却被收起」这个自相矛盾的中间态
+    void applyRange(key, PRESET_RANGES[key]())
+  }
+
+  /**
+   * 提交自定义区间（表单里的「查询该区间」）。
+   *
+   * 成功才把高亮切到 custom（由 applyRange 保证）；失败时表单保持展开，
+   * 用户能看到自己刚填的日期并重试或改区间 —— 这正是与旧写法的关键差别。
+   */
+  function submitCustomRange() {
     const custom = { startDate, endDate }
     // 后端对 startDate 晚于 endDate 返回 2002，先在本地挡掉
     if (!isValidRange(custom)) {
@@ -245,11 +278,10 @@ export default function StatisticsPage() {
         ))}
       </View>
 
-      {/* 自定义表单只在 custom 处于选中态时展开。注意一个连带的时序：
-          rangeKey 在请求成功后才变 custom，所以「点自定义」同一次就发一次查询，
-          查失败时 tab 不切、表单也不弹出来（近 7 天几乎不会失败，所以不碍事，
-          但断网时这个 tab 会看起来“点了没反应”，改这里的人值得知道） */}
-      {rangeKey === 'custom' ? (
+      {/* 自定义表单的可见性走 customOpen（只看用户意图，不等网络），
+          而 tab 高亮走 rangeKey（只在请求成功后变）：
+          两者故意分开 —— 前者是“我在挑区间”，后者是“我正在看哪段” */}
+      {customOpen ? (
         <View className='fm-card custom-range'>
           <View className='custom-range__row'>
             <Picker
@@ -280,9 +312,7 @@ export default function StatisticsPage() {
           </View>
           <View
             className='fm-btn fm-btn--primary custom-range__apply'
-            // 复用 tab 的同一个入口：手改日期与点 tab 的后端行为完全一致，
-            // 写两个函数就会有一处漏掉 dayCount 兜底
-            onClick={() => handleTabChange('custom')}
+            onClick={submitCustomRange}
           >
             查询该区间
           </View>
