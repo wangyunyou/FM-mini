@@ -14,7 +14,8 @@
     "dev:weapp": "npm run build:weapp -- --watch",
     "build:weapp": "taro build --type weapp",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint --ext .ts,.tsx src config"
+    "lint": "eslint --ext .ts,.tsx src config",
+    "check:theme": "node scripts/check-theme.js"
   },
   "browserslist": [
     "defaults and fully supports es6-module",

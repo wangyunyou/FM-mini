@@ -8,51 +8,54 @@
 
 page {
   /*
-   * 色板（2026-08-28 定色）：界面退到「松烟墨」，饱和度只留给餐次四类。
+   * 色板（2026-08-28 第二版，参照主流健康/记录类 app 的实际用色）：
+   * 薄荷健康 #37D786、Keep #2AA527、知乎 #1772F6、MyFitnessPal #0066EE、
+   * Noom #FB513B、Apple/Fitbit #0071E3/#1967D2 —— 共同规律是
+   * 「大面积白/冷灰白 + 近黑文字 + 小面积品牌强调色」，深色块一律用近黑而不是饱和色。
    *
-   * 为什么不让界面也吃饱和绿：
-   * - 旧 primary #1f6f54 与旧午餐色 #2f8f6c 色相只差 2°（Lab ΔE=13），
-   *   而 primary-bright 与午餐色是**同一个 hex** —— 统计页的 hero 和「午餐」分布条
-   *   是一个颜色，分类色被界面吃掉。
-   * - 微信自己的品牌绿 #07C160 在小程序里到处都是，纯绿主色辨识度反而低。
-   * 所以新 primary 往青/墨推（色相 169°、更暗），四类餐次色各自拉开：
-   *   早餐 19° / 午餐 99° / 晚餐 228° / 加餐 330°，绿盲与红盲模拟下最难分的一对 ΔE≥25。
-   *
-   * 对比度门槛：文字 ≥4.5、图形（色点/分布条/色带）≥3.0，已逐项验算。
-   * 旧值里 text-tertiary #9ba5a0 只有 2.54，却同时用于 .fm-tertiary 提示文字、
-   * 空状态文案和 tabBar 未选中项 —— 属于不达标，这次一并提到 4.53。
-   * 顺带删掉 --fm-accent-warn：全项目零引用，且与旧早餐色 #e08a2f 逐字同色。
+   * 关键约束（实测算出来的，不是感觉）：薄荷绿太亮，#00A870 白字对比只有 3.07，
+   * 连 AA 的 4.5 都不到 —— 薄荷健康、Keep 的按钮白字其实都不达标。
+   * 所以绿色必须分两层用：
+   *   --fm-primary        #00873c  深一档：文字、CTA 底、tabBar 选中、导航栏（白字 4.63 ✅）
+   *   --fm-primary-bright #00ab3c  鲜一档：只用于图形（进度条、大数字、装饰），≥3.0 ✅
+   * 混用的后果就是"白字看不清"或者"整屏发闷"。
    */
-  --fm-primary: #14524b;
-  --fm-primary-bright: #1c6f5c;
-  --fm-primary-weak: #e4efec;
-  --fm-accent-danger: #c0392b;
+  --fm-primary: #00873c;
+  --fm-primary-bright: #00a338;
+  --fm-primary-weak: #e4f6e9;
+  --fm-accent-danger: #d93025;
   /* danger 按钮的描边：以前这里散写 #f4dedd，收进 token 才能整体换肤 */
-  --fm-accent-danger-weak: #f2dedb;
-  --fm-text: #101e1b;
-  --fm-text-secondary: #4f615b;
-  --fm-text-tertiary: #697a74;
-  --fm-bg: #f2f5f4;
+  --fm-accent-danger-weak: #fbe3e1;
+  --fm-text: #17211d;
+  /* 二级与三级只差一档时层级会糊（实测 ΔE=6 看不出差别），拉开到 ΔE≈13 */
+  --fm-text-secondary: #46544e;
+  --fm-text-tertiary: #636f69;
+  --fm-bg: #f4f7f5;
   --fm-surface: #fff;
-  --fm-surface-muted: #f5f8f7;
-  --fm-border: #e2eae8;
-  /* 深色底（hero / 主按钮 / tabBar 白）之上的前景色：
-     以前三处页面 scss 里散写了 #fff，违反"色值只在本文件定义一份"，统一收进变量 */
+  --fm-surface-muted: #eff4f1;
+  --fm-border: #dfe8e2;
+  /* 深色底（登录页 hero / 主按钮 / FAB）之上的前景色 */
   --fm-on-primary: #fff;
 
-  /* 尺度：阴影色跟着新 primary 走，否则墨绿底上会透出旧草绿的边 */
+  /* 尺度：阴影色跟着新 primary 走，否则浅绿底上会透出旧草绿的边 */
   --fm-radius-lg: 28px;
   --fm-radius: 20px;
   --fm-radius-sm: 12px;
-  --fm-shadow: 0 8px 28px rgba(16, 60, 54, 0.07);
-  --fm-shadow-sm: 0 4px 16px rgba(16, 60, 54, 0.05);
-  /* 主色发光：选中态胶囊 / tab 用。收在这里是因为页面 scss 曾散写过
-     rgba(31, 111, 84, .28) —— 旧 primary 的 rgba 形式，换主题时必然漏改 */
-  --fm-glow: 0 6px 18px rgba(20, 82, 75, 0.28);
+  --fm-shadow: 0 8px 28px rgba(0, 90, 42, 0.07);
+  --fm-shadow-sm: 0 4px 16px rgba(0, 90, 42, 0.05);
+  --fm-glow: 0 6px 18px rgba(0, 135, 60, 0.26);
   /* 底部固定操作栏的渐隐底：起始透明 + 落到 --fm-bg 同值（rgba 写法，
      自定义属性没法嵌进 rgba()，所以这里只能重复一次字面值，改 bg 时记得同步） */
-  --fm-fade-to-bg: linear-gradient(180deg, rgba(242, 245, 244, 0) 0%, #f2f5f4 42%);
-  --fm-hero: linear-gradient(135deg, #1c6f5c 0%, #14524b 100%);
+  --fm-fade-to-bg: linear-gradient(180deg, rgba(244, 247, 245, 0) 0%, #f4f7f5 42%);
+  /* 登录页整屏头图 / 区间 tab 选中态：两端都取深绿档，保证叠在上面的白字全程 ≥4.5；
+     亮绿 --fm-primary-bright 不进这里（它只有 3.05，白字会糊）。
+     端点单独成 token，是为了让 check-theme.js 能解析到、也为了 theme.ts 的导航栏有唯一来源 */
+  --fm-hero-top: #00873c;
+  --fm-hero-deep: #00743f;
+  --fm-hero: linear-gradient(135deg, var(--fm-hero-top) 0%, var(--fm-hero-deep) 100%);
+  /* 内页 hero：按主流做法改成浅底面板，不再用整屏饱和色块 */
+  --fm-hero-panel: #f1faf4;
+  --fm-hero-panel-line: #dceee2;
 
   background-color: var(--fm-bg);
   color: var(--fm-text);
@@ -138,7 +141,9 @@ page {
 .fm-tag {
   background-color: var(--fm-primary-weak);
   border-radius: 8px;
-  color: var(--fm-primary);
+  /* 浅绿底上放绿字必然不达标（#00873c 在 #e4f6e9 上只有 4.12），
+     所以选中态统一改成「浅绿底 + 绿描边 + 主文本色字」：描边负责品牌，文字负责可读 */
+  color: var(--fm-text);
   flex-shrink: 0;
   font-size: 22px;
   font-weight: 500;
@@ -146,22 +151,23 @@ page {
   padding: 4px 14px;
 }
 
-/* ---------- 渐变主视觉卡 ---------- */
+/* ---------- 主视觉卡（浅底面板） ---------- */
 
 .fm-hero {
-  background: var(--fm-hero);
+  background-color: var(--fm-hero-panel);
+  border: 2px solid var(--fm-hero-panel-line);
   border-radius: var(--fm-radius-lg);
-  box-shadow: 0 14px 36px rgba(20, 82, 75, 0.26);
-  color: var(--fm-on-primary);
+  box-shadow: var(--fm-shadow-sm);
+  color: var(--fm-text);
   margin-bottom: 28px;
   padding: 40px 36px 36px;
   position: relative;
   overflow: hidden;
 }
 
-/* 右上角装饰光斑，避免大面积纯色显得空 */
+/* 右上角装饰光斑：浅底上用品牌绿的极淡透明，避免大面积纯色显得空 */
 .fm-hero::after {
-  background: rgba(255, 255, 255, 0.13);
+  background: rgba(0, 135, 60, 0.07);
   border-radius: 50%;
   content: '';
   height: 320px;
@@ -172,22 +178,24 @@ page {
 }
 
 .fm-hero__label {
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--fm-text-secondary);
   font-size: 25px;
   letter-spacing: 0.5px;
 }
 
+/* 大数字：76px(design) ≈ 38px CSS，属 WCAG「大文字」档，门槛 3.0，
+   所以这里可以用鲜亮档 --fm-primary-bright，比深绿更有活力 */
 .fm-hero .fm-num {
-  color: var(--fm-on-primary);
+  color: var(--fm-primary-bright);
 }
 
 .fm-hero .fm-unit {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--fm-text-tertiary);
 }
 
 /* hero 底部的一排次级指标 */
 .fm-hero__stats {
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid var(--fm-hero-panel-line);
   display: flex;
   margin-top: 36px;
   padding-top: 28px;
@@ -200,6 +208,7 @@ page {
 }
 
 .fm-hero__stat-num {
+  color: var(--fm-text);
   display: block;
   font-size: 34px;
   font-weight: 600;
@@ -207,13 +216,13 @@ page {
 }
 
 .fm-hero__stat-label {
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--fm-text-secondary);
   font-size: 22px;
 }
 
 /* hero 底部对指标口径的补充说明 */
 .fm-hero__note {
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--fm-text-secondary);
   display: block;
   font-size: 22px;
   line-height: 1.5;
@@ -222,10 +231,10 @@ page {
   z-index: 1;
 }
 
-/* ---------- 进度条 ---------- */
+/* ---------- 进度条（置于浅底 hero 上） ---------- */
 
 .fm-progress {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(0, 135, 60, 0.12);
   border-radius: 999px;
   height: 14px;
   overflow: hidden;
@@ -233,7 +242,7 @@ page {
 }
 
 .fm-progress__fill {
-  background-color: var(--fm-on-primary);
+  background-color: var(--fm-primary-bright);
   border-radius: 999px;
   height: 100%;
   transition: width 0.35s ease;
@@ -326,7 +335,9 @@ page {
 .fm-chip--active {
   background-color: var(--fm-primary-weak);
   border-color: var(--fm-primary);
-  color: var(--fm-primary);
+  /* 同上：chip 文字 26px(design)≈13px CSS 属正常字号，需 ≥4.5；
+     绿字放浅绿底只有 4.12，所以这里用主文本色，选中感交给描边+底色 */
+  color: var(--fm-text);
   font-weight: 600;
 }
 
@@ -352,9 +363,11 @@ page {
 }
 
 .fm-btn--primary {
-  background: var(--fm-hero);
+  /* 用 solid --fm-primary 而不是渐变：渐变亮端 #00ab3c 白字只有 3.05，
+     按钮文字 30px(design)≈15px CSS 属正常字号，门槛是 4.5 */
+  background: var(--fm-primary);
   border-color: transparent;
-  box-shadow: 0 10px 26px rgba(20, 82, 75, 0.28);
+  box-shadow: 0 10px 26px rgba(0, 135, 60, 0.26);
   color: var(--fm-on-primary);
   font-weight: 600;
 }
@@ -373,10 +386,10 @@ page {
 
 .fm-fab {
   align-items: center;
-  background: var(--fm-hero);
+  background: var(--fm-primary);
   border-radius: 50%;
   bottom: 72px;
-  box-shadow: 0 12px 30px rgba(20, 82, 75, 0.34);
+  box-shadow: 0 12px 30px rgba(0, 135, 60, 0.32);
   color: var(--fm-on-primary);
   display: flex;
   font-size: 60px;

@@ -7,11 +7,13 @@
   text-align: center;
 }
 
-/* 头像位：有 avatarUrl 用图，没有就用首字占位（后端字段已留，缺的是图床） */
+/* 头像位：有 avatarUrl 用图，没有就用首字占位（后端字段已留，缺的是图床）。
+   hero 改浅底后这里不能再叠白色透明层（浅底上等于看不见），
+   直接复用现成 token，避免把品牌绿的 rgb 分量散写进页面 */
 .profile-hero__avatar {
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.16);
-  border: 2px solid rgba(255, 255, 255, 0.32);
+  background-color: var(--fm-primary-weak);
+  border: 2px solid var(--fm-hero-panel-line);
   border-radius: 50%;
   display: flex;
   height: 148px;
@@ -27,6 +29,7 @@
 }
 
 .profile-hero__avatar-text {
+  color: var(--fm-primary);
   font-size: 64px;
   font-weight: 600;
   line-height: 1;
@@ -48,7 +51,7 @@
 }
 
 .profile-hero__meta-item {
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--fm-text-secondary);
   font-size: 24px;
   margin: 0 12px;
 }

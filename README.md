@@ -134,4 +134,5 @@ pnpm dev:weapp    # watch 编译，改代码自动重编
 pnpm build:weapp  # 一次性生产编译
 pnpm typecheck    # tsc --noEmit
 pnpm lint         # eslint src config
+pnpm check:theme  # 主题色自检：对比度 / 色觉可分 / 两处来源是否同值 / 有无散写色值
 ```

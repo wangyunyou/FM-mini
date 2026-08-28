@@ -7,8 +7,9 @@
 
 .login-hero {
   /* 用竖向渐变而不是通用的 135° 斜渐变：顶部是一条纯色水平边，
-     才能和同样取色的导航栏无缝相接（斜渐变会在交界处留一条斜印）*/
-  background: linear-gradient(180deg, var(--fm-primary-bright) 0%, var(--fm-primary) 100%);
+     才能和同样取色的导航栏无缝相接（斜渐变会在交界处留一条斜印）。
+     两端都取深绿档，亮档只到 3.05，撑不住叠在上面的白字 */
+  background: linear-gradient(180deg, var(--fm-hero-top) 0%, var(--fm-hero-deep) 100%);
   border-radius: 0 0 48px 48px;
   overflow: hidden;
   padding: 130px 48px 150px;
@@ -65,7 +66,7 @@
 }
 
 .login-hero__desc {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.92);
   font-size: 26px;
   margin-top: 14px;
   position: relative;
