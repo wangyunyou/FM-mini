@@ -13,6 +13,7 @@ import type { ApiResult } from '@/types/api'
 import { toast } from '@/utils/feedback'
 import { readStorage, removeStorage, STORAGE_KEYS } from '@/utils/storage'
 
+/** HTTP 方法。四个接口全用到，多一个就要同步后端 controller 的新方法。 */
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 export interface RequestOptions {
@@ -27,8 +28,14 @@ export interface RequestOptions {
   silent?: boolean
 }
 
-/** 业务失败（含网络失败）。code 为后端 ErrorCode，或 NETWORK_ERROR。 */
+/**
+ * 业务失败（含网络失败）。
+ *
+ * 页面里不需要判断 code 做分支（文案统一用 message toast）；
+ * 例外是登录态失效，那条路径不由页面判，在 request 层内部已处理完。
+ */
 export class ApiError extends Error {
+  /** 后端 ErrorCode 里的值；网络层失败时是 NETWORK_ERROR(-1)，HTTP 异常而无业务码时是状态码 */
   readonly code: number
 
   constructor(code: number, message: string) {
@@ -60,11 +67,19 @@ interface RawResponse<T> {
   data: T
 }
 
+/**
+ * 取 token。
+ *
+ * 为什么不用 utils/auth.ts 里同名的 getToken：那会形成 request → auth → api/user → request
+ * 的循环依赖（auth 要调 loginByWechat，而它走的就是本层）。
+ * 所以本层直接读 storage，auth 层的 getToken 只给业务代码用。
+ */
 function getToken(): string {
   const token = readStorage<string>(STORAGE_KEYS.TOKEN, '')
   return typeof token === 'string' ? token : ''
 }
 
+/** 拼 header。withToken=false 用于登录接口（此时手里最多只有一个过期 token，带上反而适得其反）。 */
 function buildHeader(withToken: boolean): Record<string, string> {
   const header: Record<string, string> = { 'content-type': 'application/json' }
   const token = withToken ? getToken() : ''
@@ -75,6 +90,7 @@ function buildHeader(withToken: boolean): Record<string, string> {
   return header
 }
 
+/** 取当前页路径（不带前导 /，用来和 ROUTES 对齐后做比较）。失败时返回空串，宁可不跳也不要误跳。 */
 function currentRoute(): string {
   try {
     const pages = Taro.getCurrentPages()
@@ -86,6 +102,12 @@ function currentRoute(): string {
   }
 }
 
+/**
+ * 清登录态并回登录页。
+ *
+ * 不报错也不提示：走到这里说明失败提示已由 request 层弹过，
+ * 再叠一条只会让用户看到两个堆叠的弹窗。
+ */
 function redirectToLogin(): void {
   const loginRoute = ROUTES.LOGIN.replace(/^\//, '')
   if (isRedirectLocked() || currentRoute() === loginRoute) {
@@ -109,6 +131,7 @@ function ensureNotAuthFailure(httpStatus: number, code: number): void {
   }
 }
 
+/** 请求日志只在 IS_DEV 打：接口响应体里有用户资料，不该往生产环境的控制台里刷。 */
 function debugLog(...args: unknown[]): void {
   if (IS_DEV) {
     console.log(...args)

@@ -8,10 +8,19 @@
 /** 昵称最长 64（WxLoginRequest / UpdateUserRequest 的 @Size(max = 64)）。 */
 export const NICKNAME_MAX = 64
 
-/** 头像 URL 最长 512。 */
+/**
+ * 头像 URL 最长 512。
+ *
+ * ⚠️ 目前**无代码引用**：本页没有头像上传（理由见 pages/profile/index.tsx 文件头），
+ * 留着是因为本文件的定位是「后端校验注解的镜像清单」，删了反而看不出 DTO 上有什么。
+ * 真要启用上传时记得把这里接进校验，否则只能靠后端 400 接住。
+ */
 export const AVATAR_URL_MAX = 512
 
-/** 食物名称最长 200，且不能为空。 */
+/**
+ * 食物名称最长 200，且不能为空（后端对齐 diet_records.food_name 的 VARCHAR(200)）。
+ * 为什么不用 `@Size` 而是对齐实体列：不先拦住会在写库时变 500，而不是 400。
+ */
 export const FOOD_NAME_MAX = 200
 
 /** 备注最长 500。 */
@@ -26,11 +35,20 @@ export const CALORIES_MIN = 0
  */
 export const CALORIES_MAX = 100000
 
-/** 餐次取值 1-4。 */
+/**
+ * 餐次取值 1-4。
+ *
+ * ⚠️ 目前**无代码引用**：餐次都从 MEAL_ORDER 里按下标取，天然不会越界，所以没地方需要它们。
+ * 留着当后端 `@Min(1)/@Max(4)` 的镜像；改动时两边一起动。
+ */
 export const MEAL_TYPE_MIN = 1
 export const MEAL_TYPE_MAX = 4
 
-/** 性别取值 0-2。 */
+/**
+ * 性别取值 0-2。
+ *
+ * ⚠️ 同 MEAL_TYPE_*：无引用（性别走 genderByIndex，越界已回落「不填」），仅作后端契约镜像。
+ */
 export const GENDER_MIN = 0
 export const GENDER_MAX = 2
 

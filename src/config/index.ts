@@ -12,6 +12,12 @@ export const REQUEST_TIMEOUT = 15000
 /** 当前构建环境，dev 下才输出调试日志。 */
 export const IS_DEV = process.env.NODE_ENV === 'development'
 
+/**
+ * 去掉结尾多余的 `/`。
+ *
+ * env 里很容易写成 `http://localhost:8080/`，而本层拼 URL 是 `${API_BASE_URL}${url}`
+ * 且 url 自带前导 `/`，不剪就会拼出 `http://host//api/diet` 这种带空路径段的地址。
+ */
 function normalizeBaseUrl(raw: string | undefined): string {
   // 去掉结尾多余的 /，避免拼出 `//api/xxx` 这种双斜杠路径
   return (raw ?? '').trim().replace(/\/+$/, '')

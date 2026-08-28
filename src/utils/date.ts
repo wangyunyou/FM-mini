@@ -13,11 +13,20 @@ const WEEK_START_DAY = 1
 
 const WEEKDAY_LABELS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
+/**
+ * 一个日期区间，直接对应后端 GET /api/diet/query 的 startDate / endDate 两个查询参数。
+ *
+ * 都是含头含尾的自然日（dayCount 算的是 endDate - startDate + 1），
+ * 与后端 DietRecordServiceImpl 的 between 语义一致。
+ */
 export interface DateRange {
+  /** yyyy-MM-dd */
   startDate: string
+  /** yyyy-MM-dd，不保证早于今天（预设区间天生会落在未来，由 clampEndToToday 夹回来） */
   endDate: string
 }
 
+/** 补零，专给 yyyy-MM-dd 用（Date 的 month 从 0 起、日/月/时都是数字，不补零拼出来不是后端要的格式）。 */
 function pad(value: number): string {
   return value < 10 ? `0${value}` : `${value}`
 }
@@ -47,6 +56,7 @@ export function parseDate(text: string | undefined | null): Date | null {
   return date
 }
 
+/** 今天的日期串。每次调用都现取，不做成模块常量：小程序可能整夜不关，常驻值过了凌晨就会错一天。 */
 export function todayStr(): string {
   return formatDate(new Date())
 }
@@ -56,23 +66,44 @@ export function dayOffsetStr(offset: number): string {
   return formatDate(addDays(new Date(), offset))
 }
 
+/**
+ * 在原日期上加 days 天（负数往前），返回新的 Date。
+ *
+ * 为什么不用 `date.setDate(n)` 或时间戳加减：
+ * 前者会原地改入参（调用方手里的 Date 被偷偷推后），后者的 86400*1000 在有
+ * 夏令时的地区会差一小时。这里走 (年, 月, 日) 构造，天数溢出由 Date 自己进位。
+ */
 export function addDays(date: Date, days: number): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
 }
 
+/**
+ * 所在周的周一零点。
+ *
+ * `+ 7` 是为了把 JS 取模的负数结果转成正数：周日 getDay()=0，
+ * 0 - WEEK_START_DAY = -1，-1 % 7 在 JS 里是 -1 而不是 6，不补就会把周日算到下周去。
+ */
 export function startOfWeek(date: Date): Date {
   const offset = (date.getDay() - WEEK_START_DAY + 7) % 7
   return addDays(date, -offset)
 }
 
+/** 所在周的周日（自然末端，可能在未来，用作区间时还要过 clampEndToToday）。 */
 export function endOfWeek(date: Date): Date {
   return addDays(startOfWeek(date), 6)
 }
 
+/** 所在月第一天。 */
 export function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
+/**
+ * 所在月最后一天。
+ *
+ * 月末天数担心不得（28/29/30/31），而 Date 构造对 day=0 的定义就是「上个月最后一天」，
+ * 所以下个月 0 号 = 本月最后一天，一行兼平闰年与大小组。
+ */
 export function endOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0)
 }
@@ -176,7 +207,9 @@ export function formatDateLabel(dateText: string): string {
 }
 
 export interface DateGroup<T> {
+  /** yyyy-MM-dd，取自记录的 recordDate */
   date: string
+  /** 同一天的记录，保持接口返回的原始顺序 */
   items: T[]
 }
 

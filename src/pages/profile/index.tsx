@@ -1,3 +1,25 @@
+/**
+ * 「我的」页（tabBar 第三项）。
+ *
+ * 职责：GET/PUT /api/user/info 与退出登录。
+ * 它是禁用链路（1002）的主要触发点：进页就拉资料，账号被封时正好在这里被踢回登录页。
+ *
+ * 三个不显眼的约定：
+ * 1. 只提交改过的字段（handleSave 里的 payload）——后端是部分更新，
+ *    全量提交会把没动的字段也刷一遍，并且把“空串=清空”这类语义错发出去；
+ * 2. 缓存先出再网络覆盖（load 里的 getCachedUserInfo）——切 tab 等一个 RTT 很像页面坏了；
+ *    代价是可能短暂展示旧值；
+ * 3. 没做真实头像上传——小程序没有免费图床，wx.chooseMedia 拿到的临时路径会过期，
+ *    要落地得自己加文件存储。avatarUrl 字段两边都留着，现在只用来判“有没有”以决定显图还是显字。
+ *
+ * 状态与触发链（本页最容易搞混的是“服务端值”与“表单值”各一套）：
+ *   info           → 服务端当前值（渲染 + 差异比较的基准）
+ *   nickname / genderIndex → 表单里正在编辑的值，仅靠 dirtyRef 决定要不要被回填覆盖
+ *   dirtyRef       → 用户动过表单；load 完成后的 syncForm 靠它避开覆盖
+ *   saving         → 同时给保存按钮与退出入口当闸门（两者互斥）
+ *   requestSeqRef  → 只用于丢弃过期响应
+ *   触发 load 的两个入口：useDidShow（含 ensureLoggedIn 补登）、handleSave 成功后
+ */
 import { useCallback, useRef, useState } from 'react'
 
 import { Button, Image, Input, Text, View } from '@tarojs/components'
@@ -23,6 +45,7 @@ const NICKNAME_PLACEHOLDER = '还没起名字'
  */
 function avatarLetter(nickname: string | undefined | null): string {
   const name = (nickname ?? '').trim()
+  // 兼不到名字时用 F（项目首字母）而不是留空：空的圆形头像位看起来像图加载失败
   return name ? name.slice(0, 1).toUpperCase() : 'F'
 }
 
@@ -58,6 +81,13 @@ export default function ProfilePage() {
     }
   }, [])
 
+  /**
+   * 加载资料：缓存先出 + 网络覆盖。
+   *
+   * 为何不只要网络数据：切到一个 tab 要空一个 RTT，体感像页面坏了。
+   * 缓存优先代价是可能短暂展示旧值（他在另一台设备改过昵称），
+   * 所以缓存只做初始值，拿到网络数据后一律覆盖并写回。
+   */
   const load = useCallback(async () => {
     const seq = ++requestSeqRef.current
     // 先出缓存再拉网络：切到「我的」要等一个 RTT 才显示名字，体感很像没加载出来
@@ -112,6 +142,15 @@ export default function ProfilePage() {
     }
     const gender = genderByIndex(genderIndex)
 
+    /**
+     * 只提交真正改过的字段。
+     *
+     * 为什么不能全量提交：后端 PUT /api/user/info 是部分更新，“没传”与“传了”语义不同；
+     * 全量提交会把没动的字段也刷一遗，而且碰上“空串=清空”类字段会直接清掉数据
+     * （同一个坑在备注上踩过，见 record-edit 的 remark）。
+     * 比较基准是 info（服务端当前值）而不是进页时的快照：用户改完不保存又改回来时，
+     * 应该得出“没得可提交”而不是“把原值再发一遍”。
+     */
     const payload: { nickname?: string; gender?: number } = {}
     if (name && name !== (info?.nickname ?? '')) {
       payload.nickname = name
@@ -126,6 +165,8 @@ export default function ProfilePage() {
 
     setSaving(true)
     try {
+      // 保存成功后丢弃 dirty 标记再重拉：不丢的话下一次进页的晚到回填会被
+      // dirtyRef 挡住，表单就永远停在“用户改过”的状态不跟服务端对齐了
       await updateUserInfo(payload)
       dirtyRef.current = false
       await load()
@@ -138,6 +179,12 @@ export default function ProfilePage() {
     }
   }
 
+  /**
+   * 退出登录。
+   *
+   * 只清本地（见 utils/auth.ts 的 logout），后端无会话所以没有登出接口。
+   * 与保存共用一个 saving 闸门：避免一边在 PUT 一边把 token 清了，请求会变成 401 重登循环。
+   */
   async function handleLogout() {
     if (saving) {
       return
@@ -152,6 +199,7 @@ export default function ProfilePage() {
     }
   }
 
+  /** 保存按钮是否可用：真有待提交差异才允许点，避免发一次空 PUT */
   const trimmedName = nickname.trim()
   const hasChanges =
     !!info &&
@@ -161,6 +209,8 @@ export default function ProfilePage() {
   return (
     <View className='fm-page profile-page'>
       <View className='fm-hero profile-hero'>
+        {/* 头像位两种形态：有 avatarUrl 显图，没有显首字。后者是常态（无上传链路），
+            所以 Image 加载失败不需要另做兜底——fallback 就是下面那个分支 */}
         <View className='profile-hero__avatar'>
           {info?.avatarUrl ? (
             <Image className='profile-hero__avatar-img' src={info.avatarUrl} mode='aspectFill' />
@@ -171,6 +221,7 @@ export default function ProfilePage() {
         <View className='profile-hero__name'>{info?.nickname?.trim() || NICKNAME_PLACEHOLDER}</View>
         <View className='profile-hero__meta'>
           <Text className='profile-hero__meta-item'>{genderLabel(info?.gender)}</Text>
+          {/* phone 没入口能写（后端总是返回 null），所以有值才渲染，不留一行空的 */}
           {info?.phone ? (
             <Text className='profile-hero__meta-item'>{info.phone}</Text>
           ) : null}
@@ -182,6 +233,7 @@ export default function ProfilePage() {
         </Text>
       </View>
 
+      {/* 资料卡：昵称 + 性别 chips + 保存。头像不在此卡内是因为只能看不能改 */}
       <View className='fm-card'>
         <View className='fm-row fm-row--between fm-section-head'>
           <Text className='fm-title'>资料</Text>
@@ -222,6 +274,7 @@ export default function ProfilePage() {
 
         <Button
           className='fm-btn fm-btn--primary profile-save'
+          // 两个条件各挡一类无效提交：saving 挡重入，hasChanges 挡“一次空 PUT”
           disabled={saving || !hasChanges}
           loading={saving}
           onClick={handleSave}
@@ -230,6 +283,7 @@ export default function ProfilePage() {
         </Button>
       </View>
 
+      {/* 退出入口：整行可点而不是只有一块按钮，因为这页唯一的其他操作（保存）已经在上面了 */}
       <View className='fm-card fm-card--flush'>
         <View className='profile-row' onClick={handleLogout}>
           <Text className='profile-row__label'>退出登录</Text>

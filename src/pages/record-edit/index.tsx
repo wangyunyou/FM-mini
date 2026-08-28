@@ -1,3 +1,26 @@
+/**
+ * 记录编辑页（新增 / 改一条共用）。
+ *
+ * 两种形态只靠路由上有无 ?id= 区分：
+ * - 无 id → 新增，POST /api/diet，表单初值为空/今天
+ * - 有 id → 编辑，PUT /api/diet/{id}，初值来自本地草稿
+ *
+ * 为什么原记录靠 storage 传而不是进页再查：后端**没有单条查询接口**（只有区间查询），
+ * 所以由列表页整条写草稿、本页读后即清（链路见 utils/navigation.ts 与 utils/storage.ts）。
+ * 这也带来本页最严重的一个防御：带 id 却没读到草稿时不能退化成新增，
+ * 否则用户以为在改、实际 POST 出一条重复记录（见下面 draftMissing）。
+ *
+ * 表单校验逐条对齐后端 DTO 注解（constants/validation.ts ↔ @Size/@Min/@Max），
+ * 只写在前端等于没有（Swagger / test-api.html 能绕过），但反过来前端也必须挡：
+ * 后端对小数热量是静默截断而不是报错。
+ *
+ * 状态与触发链（本页没有“拉数据”，只有“读一次草稿 + 写一次”）：
+ *   routeId / draft / draftMissing / isEdit / editId → 形态判定链，顺序读才能懂
+ *   dateText / mealIndex / foodName / caloriesText / remark / initialRemark → 表单六值
+ *     （mealIndex 存下标、caloriesText 存字符串，两个例外都不是随手写的，见各自注释）
+ *   submitting → 新增/更新/删除 三个写操作共用一个闸门
+ *   入口：useLoad（改导航标）、handleSubmit、handleDelete、addCaloriesStep（不提交，只改输入框）
+ */
 import { useState } from 'react'
 
 import { Button, Input, Picker, Text, Textarea, View } from '@tarojs/components'
@@ -21,10 +44,15 @@ import './index.scss'
 
 /** 表单内部值，提交前再拆成新增/更新两种请求体。 */
 interface DietFormValues {
+  /** yyyy-MM-dd；编辑态下后端不接受这个字段，所以只用于新增 */
   recordDate: string
+  /** 餐次码 1-4 */
   mealType: number
+  /** 已 trim，非空 */
   foodName: string
+  /** 已保证是整数且在 [CALORIES_MIN, CALORIES_MAX] 内 */
   calories: number
+  /** 已 trim；空备注在这里就是 undefined（不传），而不是 '' */
   remark?: string
 }
 
@@ -55,7 +83,12 @@ function takeDraft(expectedId: number | null): DietRecordResponse | null {
   return draft
 }
 
-/** 关闭编辑页：正常回上一页；分享直达没有上一页时回首页。 */
+/**
+ * 关闭编辑页：正常回上一页；分享直达没有上一页时回首页。
+ *
+ * 为什么不只用 navigateBack：本页可以从分享链接直达，页面栈里没有上一页时
+ * navigateBack 会失败，用户点「保存」后就停在原地，看起来像没保存。
+ */
 async function closeEditor(): Promise<void> {
   try {
     await Taro.navigateBack()
@@ -68,8 +101,19 @@ async function closeEditor(): Promise<void> {
 export default function RecordEditPage() {
   const router = useRouter()
   // 新增时路由不带 id，此时 Number(undefined) 是 NaN，归为 null
+  // （不用 Number.isNaN 判断而用 isFinite：?id=abc 这类脏入参会给出 NaN 以外的垃圾，
+  //   干脆只接受有限数字，剩下的统一当「新增」）
   const expectedId = Number(router.params.id)
   const routeId = Number.isFinite(expectedId) ? expectedId : null
+  /**
+   * 编辑态的原记录，来自列表页写下的本地草稿。
+   *
+   * ❕ 为什么要把取草稿包成 lazy initializer（传给 useState 的是一个函数），而不是直接把调用结果传进去：
+   * takeDraft 不是个纯函数，它读 storage 后**顺手删掉**（读后即清）。
+   * 不包成箭头函数时每次渲染都会执行一遍，除了白白删一次，
+   * 更坑的是 React 只用第一次的返回值，后面的执行结果直接被丢弃。
+   * 这里用 lazy initializer，让它在本页生命周期内只跑一次。
+   */
   const [draft] = useState(() => takeDraft(routeId))
 
   /**
@@ -81,7 +125,14 @@ export default function RecordEditPage() {
    * 用户以为在改，实际点保存是 POST 新建一条重复记录（静默污染数据）。
    */
   const draftMissing = routeId != null && draft == null
+  /**
+   * 是不是编辑态。
+   *
+   * 注意它只表示「草稿真拿到了」，而 draftMissing 表示「本该拿到却没拿到」；
+   * 两者合起来才是完整判定，只看 draft 是否为空会把后者当成新增。
+   */
   const isEdit = typeof draft?.id === 'number'
+  /** 提交 PUT 时用的 id：优先草稿里的，它才是真正被读到的那条 */
   const editId = isEdit ? (draft as DietRecordResponse).id : routeId
   const [dateText, setDateText] = useState(draft?.recordDate ?? todayStr())
   const [mealIndex, setMealIndex] = useState(() => {
@@ -90,6 +141,14 @@ export default function RecordEditPage() {
     return index >= 0 ? index : 0
   })
   const [foodName, setFoodName] = useState(draft?.foodName ?? '')
+  /**
+   * 热量在表单里是**字符串** state，不是 number。
+   *
+   * 三个原因：
+   * 1. Input 的 value 只能是字符串，存 number 就得每次渲染再转；
+   * 2. 输入框清空是合法操作，而 number 表达不了“空”（存 0 会把用户的清空当成填了 0）；
+   * 3. 输入中途的 `12.` 、`0` 这类临时态也不应该被丢掉精度，统一在 buildValues 里一次转完。
+   */
   const [caloriesText, setCaloriesText] = useState(
     typeof draft?.calories === 'number' ? String(draft.calories) : ''
   )
@@ -109,7 +168,16 @@ export default function RecordEditPage() {
     })
   })
 
-  /** 逐条对齐后端校验规则，任一不合法就提示并返回 null。 */
+  /**
+   * 表单值 + 逐条对齐后端校验规则，任一不合法就提示并返回 null。
+   *
+   * 为什么返回 null 而不是抛异常：校验不通过是**日常路径**，不是异常；
+   * 抛异常会让调用方多包一层 catch，没必要；
+   * 提示也统一在这里发，调用点判空后直接返回即可，不必各自拼文案。
+   *
+   * 校验顺序与后端一致：非空 → 长度 → 数值 → 上下限 → 枚举，
+   * 先报用户一看就懂的那个错，而不是把五条一起弹。
+   */
   function buildValues(): DietFormValues | null {
     const name = foodName.trim()
     if (!name) {
@@ -164,6 +232,12 @@ export default function RecordEditPage() {
     }
   }
 
+  /**
+   * 保存（新增或更新）。
+   *
+   * 两条分支的请求体不同不是冗余：创建接口除备注外全字段必填，更新接口只受理传了的字段。
+   * 共用一份 payload 会把更新变成“全量覆盖”，并把 recordDate 错发给不支持它的 PUT。
+   */
   async function handleSubmit() {
     if (submitting) {
       return
@@ -189,9 +263,14 @@ export default function RecordEditPage() {
           mealType: values.mealType,
           foodName: values.foodName,
           calories: values.calories,
-          // 备注框被清空、且进来时本来有内容 → 显式发空串表示「清空」。
-          // 不能发 undefined：JSON.stringify 会丢掉该键，后端当成「不改」，
+          // 备注是全页最绕的一个表达式，值得逐块读：
+          //   !values.remark    —— 用户在表单里把备注清空了（buildValues 已 trim）
+          //   && initialRemark  —— 而且进来的时候本来有内容
+          //   ? ''              → 两条同时成立才是「清空」，显式发空串
+          //   : values.remark   → 否则原样发（undefined 就是「不改」）
+          // 不能用 undefined 表“清空”：JSON.stringify 会丢该键，后端当成「不改」，
           // 于是备注永远清不掉（实测省略键与传 null 都改不动原值）。
+          // 反方向也错：没改过却发 '' 会真把备注抹掉，所以必须拿 initialRemark 对一次。
           remark:
             !values.remark && initialRemark ? '' : values.remark
         })
@@ -208,8 +287,16 @@ export default function RecordEditPage() {
     }
   }
 
+  /**
+   * 删除当前记录（仅编辑态有这个入口）。
+   *
+   * 为什么复用 submitting 而不是另开一个 deleting：删除与保存是互斥的两个写操作，
+   * 共用一个闸门既挡住「保存请求还在飞就点删除」，也让底部按钮与删除行同时置灰。
+   * 多一个 state 只会多一组「两个都是 true 怎么办」的分支。
+   */
   async function handleDelete() {
     if (submitting || editId == null) {
+      // editId == null 说明这是新增页，没东西可删；不能只靠「不渲染删除行」兼容
       return
     }
     const confirmed = await confirm(
@@ -232,13 +319,21 @@ export default function RecordEditPage() {
     }
   }
 
-  /** 快捷加数只改输入框内容，整数与上下限仍走 buildValues 那一套校验。 */
+  /**
+   * 快捷加数只改输入框内容，整数与上下限仍走 buildValues 那一套校验。
+   *
+   * 为什么这里不夹 CALORIES_MAX：把夹偷逻辑分在两处，以后上限只改一处就会不一致；
+   * 而且用户还没提交，当场静默改写输入比提交后给一句原因不明的提示更让人困惑。
+   * 非数字输入（比如粘贴了字母）回落到从 0 开始加，而不是让 NaN 一路传下去。
+   */
   function addCaloriesStep(step: number) {
     const current = Number(caloriesText.trim())
     const base = Number.isFinite(current) && current > 0 ? current : 0
     setCaloriesText(String(base + step))
   }
 
+  // 兜底页先 return，不在表单上叠 disabled：下面的 JSX 就可以假定
+  // 「能走到这里就要么拿到了草稿、要么本来就是新增」，不用再处处判 draft
   if (draftMissing) {
     return (
       <View className='fm-page edit-page'>
@@ -259,9 +354,13 @@ export default function RecordEditPage() {
 
   return (
     <View className='fm-page edit-page'>
+      {/* 主表单卡：餐次/日期/名称/热量/备注。顺序与后端实体字段一致，
+          餐次放最前因为它是用户每天真正在选的东西 */}
       <View className='fm-card'>
         <View className='fm-field'>
           <View className='fm-field__label'>餐次</View>
+          {/* 用 chips 而不是 Picker：餐次只有 4 个固定值，全部可见比滚一轮体验好。
+              值只能从 MEAL_ORDER 里按下标取，所以用户选不出 1-4 以外的餐次码 */}
           <View className='fm-chips fm-chips--grid'>
             {MEAL_ORDER.map((mealType, index) => (
               <View
@@ -278,6 +377,8 @@ export default function RecordEditPage() {
 
         <View className='fm-field'>
           <View className='fm-field__label'>日期</View>
+          {/* 两种形态不是美观差异，是后端能力差异：PUT 不受理 recordDate，
+              所以编辑态只能锁住并给出说明，而不能只把 Picker 隐了不提示 */}
           {isEdit ? (
             <View>
               <View className='fm-picker fm-picker--locked'>{dateText}</View>
@@ -300,6 +401,8 @@ export default function RecordEditPage() {
               </View>
               <Picker
                 className='edit-date-picker'
+                // end 锁到今天：后端对 recordDate 晚于今天是硬拒 2002（写入必须拦，
+                // 与查询的 endDate 收敛不同口径，见 AGENTS.md 同步点第 9 条）
                 end={todayStr()}
                 mode='date'
                 value={dateText}
@@ -316,6 +419,8 @@ export default function RecordEditPage() {
 
         <View className='fm-field'>
           <View className='fm-field__label'>食物名称</View>
+          {/* maxlength 与后端 @Size(max=200) / 实体 VARCHAR(200) 同一个值：
+              在输入框上挡住的长度，用户根本遇不到 400；只靠后端挡会看到截断后的内容 */}
           <Input
             className='fm-input'
             maxlength={FOOD_NAME_MAX}
@@ -331,11 +436,14 @@ export default function RecordEditPage() {
             <Input
               className='fm-input calories-input'
               placeholder='例如 320'
+              // type='number' 只决定键盘样式，不保证值合法也不保证是整数，
+              // 所以 buildValues 里的 Number.isInteger 与上下限一道都不能省
               type='number'
               value={caloriesText}
               onInput={(event) => setCaloriesText(event.detail.value)}
             />
             {caloriesText ? (
+              // 清空按钮只在有内容时出现：空框旁边放一个「清空」是噪声
               <View className='calories-clear' onClick={() => setCaloriesText('')}>
                 清空
               </View>
@@ -353,6 +461,8 @@ export default function RecordEditPage() {
         <View className='fm-field'>
           <View className='fm-field__label edit-label'>
             备注（选填）
+            {/* 实时字数而不是只在超长时报：remark 是全页唯一允许“清空”的字段，
+                用户需要看得见边界在哪（REMARK_MAX ↔ 后端 @Size(max = 500)） */}
             <Text className='counter'>
               {remark.length}
               /
@@ -369,6 +479,7 @@ export default function RecordEditPage() {
         </View>
       </View>
 
+      {/* 删除只在编辑态出现：新增还没存进库，没有可删的东西 */}
       {isEdit ? (
         <View className='edit-delete' onClick={handleDelete}>
           删除这条记录
@@ -376,6 +487,7 @@ export default function RecordEditPage() {
       ) : null}
 
 
+      {/* 提交区：按钮文案跟形态变，形态又跟路由上的 id 变，三处必须一致 */}
       <View className='edit-actionbar'>
         <Button
           className='fm-btn fm-btn--primary'

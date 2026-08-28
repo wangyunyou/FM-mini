@@ -5,10 +5,12 @@
  * 改这里必须同时改后端，否则 caloriesByMeal 的中文 key 对不上。
  */
 
+/** 餐次码。值是后端定义的合同，不是前端可自改的编号（背上的文件头写了为什么）。 */
 export enum MealType {
   Breakfast = 1,
   Lunch = 2,
   Dinner = 3,
+  /** 4 = 加餐（零食、饮料等），后端把不归类于一日三餐的都放这里 */
   Snack = 4
 }
 
@@ -23,6 +25,12 @@ export const MEAL_ORDER: MealType[] = [
   MealType.Snack
 ]
 
+/**
+ * 餐次码 -> 中文名，内容与后端 `getMealTypeName()` 保持一致。
+ *
+ * 两个用途：统计页拿它去取 `caloriesByMeal` 的 key（那边 key 就是中文）；
+ * 以及后端 mealTypeName 缺失时的本地兜底文案。
+ */
 export const MEAL_NAME_BY_TYPE: Record<MealType, string> = {
   [MealType.Breakfast]: '早餐',
   [MealType.Lunch]: '午餐',

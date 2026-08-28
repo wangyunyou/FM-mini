@@ -2,6 +2,9 @@
  * 登录态管理。
  *
  * token 只存本地 storage，失效判断交给后端：任何接口返回 401 时由 request 层统一清 token 并跳登录。
+ *
+ * 仍保留本文件而不是把逻辑放进 api/：登录这条链上有三个互相纠缠的约定
+ * （首登判据、静默登录、缓存秒开），收在一处才看得完。
  */
 import Taro from '@tarojs/taro'
 
@@ -39,11 +42,19 @@ export function isFirstLogin(): boolean {
   return !hasLocalSession()
 }
 
+/**
+ * 读缓存里的用户资料（没缓存返回 null，不抛错）。
+ *
+ * 作用是秒开：「我的」页直接渲染缓存再等网络覆盖，
+ * 否则切过去要空一个 RTT，体感像页面坏了。
+ * 代价是可能短暂展示旧值（他在另一台设备上改过昵称），所以缓存只做初始值。
+ */
 export function getCachedUserInfo(): UserInfoResponse | null {
   const info = readStorage<UserInfoResponse | ''>(STORAGE_KEYS.USER_INFO, '')
   return info ? info : null
 }
 
+/** 写用户资料缓存。调用时机只有一个：fetchUserInfo 拿到新数据后。 */
 export function cacheUserInfo(info: UserInfoResponse): void {
   writeStorage(STORAGE_KEYS.USER_INFO, info)
 }

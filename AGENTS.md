@@ -1,6 +1,6 @@
 # FM-mini 项目指引
 
-微信小程序前端，Taro 4.2.1 + React 18 + TypeScript，只面向 weapp 一个平台。后端是同级目录 `../FM-service`（Spring Boot 3.2.5）。
+微信小程序前端，Taro 4.2.1 + React 18 + TypeScript，只面向 weapp 一个平台。后端是同级目录 `../FM`（GitHub 仓库名 `FM-service`，Spring Boot 3.2.5）。
 
 ## 常用命令
 
@@ -13,6 +13,21 @@ pnpm lint          # eslint
 ```
 
 `tsconfig.json` 开了 `noUnusedLocals` / `noUnusedParameters` / `strictNullChecks`，多余 import 和漏判空都会编译失败。
+
+## 注释规范
+
+本项目与后端 `../FM` 一样是**学习项目 + 生产代码**，注释按后端同一标准写（见 `FM/AGENTS.md`「注释规范」）。
+
+- **文件头注释**：每个 `ts` / `tsx` 顶部一段 JSDoc，说明这个文件负责什么、数据从哪来到哪去、对应后端哪个类或接口、有没有跨端契约要遵守
+- **导出符号**：`export` 的函数、类、常量、类型都要有 JSDoc，写**输入输出与为什么这样设计**，不复述代码在做什么
+- **interface 字段**：逐字段说明业务含义、枚举值含义、可否为 null、后端来源。样板见 `types/api.ts`
+- **关键逻辑**：分支判断、边界处理、并发与时序、设计取舍必须解释原因；踩过的坑写清「以前是什么、为什么会坏」。样板见 `utils/date.ts` 的 `clampEndToToday`、`pages/statistics/index.tsx` 的 `activeRange`
+- **React / Taro 概念要展开讲**：生命周期钩子只注册一次导致闭包旧值、`useRef` 与 `state` 成对提交、请求序号守卫——这些是本项目最容易看不懂的写法，出现一处就讲一处，别假设读者知道
+- **JSX 分区**：页面 `return` 里每个视觉区块给一行说明（hero / 卡片 / 空态 / 悬浮按钮），复杂三元要说清两种形态的差别
+
+判据是**删掉这条注释后，下一个人会不会少知道一件事**。写「取数据」「渲染列表」「遍历循环」这种复述型注释不算达标；宁可少写也不要灌水。
+
+密度参考（2026-08-28 补齐后）：后端 `FM/src` 注释占非空行约 53%，本仓库约 40%。**剩下的差距是结构性的，不要硬凑**：Java 一个 public 类一个文件（39 个文件平均 44 行代码），每个文件天然要一份类级 Javadoc；前端页面文件动辄 300 行，靠文件头 + 分区块注释覆盖同一件事。
 
 ## 分层约定
 

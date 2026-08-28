@@ -28,12 +28,22 @@ export function loginByWechat(
   })
 }
 
-/** 获取当前登录用户资料。 */
+/**
+ * 获取当前登录用户资料（后端 UserController#getUserInfo）。
+ *
+ * 后端走的是 getActiveUserById 而不是 getById：它顺带查 users.status，
+ * 禁用账号会在这一步返回 1002，而不是拉到一份被封号者的资料。
+ */
 export function fetchUserInfo(): Promise<UserInfoResponse> {
   return request<UserInfoResponse>({ url: '/api/user/info' })
 }
 
-/** 更新用户资料，只传需要改的字段。 */
+/**
+ * 更新用户资料，只传需要改的字段。
+ *
+ * nickname / avatarUrl 传空串会被后端拒成 400（它们不允许刷成空），
+ * 所以本页只有“改成新值”一条路，没有“清空昵称”。
+ */
 export function updateUserInfo(payload: UpdateUserRequest): Promise<void> {
   return request<void>({ url: '/api/user/info', method: 'PUT', data: { ...payload } })
 }
