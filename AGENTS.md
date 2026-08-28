@@ -114,5 +114,9 @@ Taro 的 `useDidShow` / `useLoad` 等生命周期钩子只在挂载时注册一�
 ## 不要做的事
 
 - 不要把后端地址写进源码，只走 `.env.*` 里的 `TARO_APP_API_BASE_URL`。
+- 不要在开发者工具 UI 里填 AppID。工具会把值写进 `dist/project.config.json`，而那是**构建产物** ——
+  每次 `taro build` 都用「仓库根 `project.config.json` + `TARO_APP_ID`」重新生成它，手填的值必被刷掉
+  （表现就是每次重开工具都“没有 appid”）。当前真实 AppID 写死在仓库根 `project.config.json` 的 `appid`，
+  两个 `.env` 里的 `TARO_APP_ID` 留空以沿用它；换号时改根目录那个字段，或用 `TARO_APP_ID` 覆盖。
 - 不要往 `package.json` 加回其他平台插件（alipay/tt/swan/qq/jd/harmony）——`config/index.ts` 已删掉对应构建段，加回来只会让 `taro build` 报配置不一致。
 - 不要引入需要额外构建链的 UI 库前先确认体积；小程序主包 2MB 限制。

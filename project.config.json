@@ -2,7 +2,7 @@
   "miniprogramRoot": "./dist",
   "projectname": "FM-mini",
   "description": "FM 小程序前端：饮食记录打卡与统计",
-  "appid": "touristappid",
+  "appid": "wxc74a6c192eca34a3",
   "setting": {
     "urlCheck": false,
     "es6": false,

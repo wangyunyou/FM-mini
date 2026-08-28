@@ -41,10 +41,15 @@ Taro 按 `.env` → `.env.<mode>` → `.env.local` → `.env.<mode>.local` 的�
 
 | 文件 | 是否入库 | 放什么 |
 |---|---|---|
-| `.env.development` | 是（模板） | 本地默认值 `http://localhost:8080`、空 AppID |
+| `.env.development` | 是（模板） | 本地默认值 `http://localhost:8080`、AppID 留空 |
 | `.env.production` | 是（模板） | 占位域名，不写真实值 |
-| `.env.development.local` | 否（被 `*.local` 忽略） | 真机联调的局域网 IP、开发者 AppID |
-| `.env.production.local` | 否 | 线上真实域名与 AppID（或改由 CI 注入） |
+| `.env.development.local` | 否（被 `*.local` 忽略） | 真机联调的局域网 IP；需要换号时再覆盖 AppID |
+| `.env.production.local` | 否 | 线上真实域名（或改由 CI 注入） |
+
+**AppID 写死在 [`project.config.json`](./project.config.json) 的 `appid` 字段**，两个 `.env` 里的 `TARO_APP_ID` 故意留空。
+原因：开发者工具导入的是 `dist/`，UI 里填的 AppID 会被写进 `dist/project.config.json`，而那是构建产物 ——
+每次 `taro build` 都会用「仓库根 `project.config.json` + `TARO_APP_ID`」重新生成它，手填的值必被刷掉。
+所以 AppID 只能配在构建输入（根 `project.config.json` 或 `TARO_APP_ID`）里，不能配在工具 UI 里。
 
 两个模板文件里不得出现密钥；后端的 `JWT_SECRET` / `WX_SECRET` 属于 `../FM-service` 的 `.env`，已被那边忽略。
 
@@ -120,7 +125,7 @@ src/
   日常量级（一年千余条）没问题。作为兜底，后端把单次跨度限制在 366 天（超出返回 2003），
   统计页的开始日期 Picker 也按结束日期倒推同样的下界，选不出注定被拒的区间；
   真要放开长区间，得先给接口加分页并同步这里。
-- 生产域名与 AppID 填在 `.env.production.local`（不入库），并在小程序后台配置 request 合法域名。
+- 生产域名填在 `.env.production.local`（不入库），并在小程序后台配置 request 合法域名。AppID 跟 `project.config.json` 走，不用单独配。
 
 ## 常用命令
 
