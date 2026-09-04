@@ -277,10 +277,28 @@ page {
   border: 2px solid transparent;
   border-radius: var(--fm-radius);
   box-sizing: border-box;
+  color: var(--fm-text);
   font-size: 28px;
-  min-height: 92px;
-  padding: 20px 24px;
+  height: 92px;
+  line-height: 92px;
+  padding: 0 24px;
   width: 100%;
+}
+
+textarea.fm-input,
+.fm-textarea {
+  box-sizing: border-box;
+  font-size: 28px;
+  height: auto;
+  line-height: 1.5;
+  min-height: 170px;
+  padding: 20px 24px;
+}
+
+.fm-placeholder {
+  color: var(--fm-text-tertiary);
+  font-size: 28px;
+  font-weight: 400;
 }
 
 .fm-picker {
@@ -319,12 +337,17 @@ page {
 }
 
 .fm-chip {
+  align-items: center;
   background-color: var(--fm-surface-muted);
   border: 2px solid transparent;
   border-radius: 999px;
+  box-sizing: border-box;
   color: var(--fm-text-secondary);
+  display: inline-flex;
   font-size: 26px;
-  line-height: 68px;
+  height: 68px;
+  justify-content: center;
+  line-height: 1;
   margin-bottom: 16px;
   margin-right: 16px;
   min-width: 132px;

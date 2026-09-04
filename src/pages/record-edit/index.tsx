@@ -389,30 +389,37 @@ export default function RecordEditPage() {
           ) : (
             <View>
               <View className='fm-chips fm-chips--grid'>
-                {DATE_SHORTCUTS.map((shortcut) => (
+                {DATE_SHORTCUTS.map((shortcut) => {
+                  const isSelected = dayOffsetStr(shortcut.offset) === dateText
+                  return (
+                    <View
+                      key={shortcut.offset}
+                      className={`fm-chip edit-chip${isSelected ? ' fm-chip--active' : ''}`}
+                      onClick={() => setDateText(dayOffsetStr(shortcut.offset))}
+                    >
+                      {shortcut.label}
+                    </View>
+                  )
+                })}
+                <Picker
+                  className='edit-date-picker-item'
+                  end={todayStr()}
+                  mode='date'
+                  value={dateText}
+                  onChange={(event) => setDateText(event.detail.value)}
+                >
                   <View
-                    key={shortcut.offset}
-                    className={`fm-chip edit-chip${dayOffsetStr(shortcut.offset) === dateText ? ' fm-chip--active' : ''}`}
-                    onClick={() => setDateText(dayOffsetStr(shortcut.offset))}
+                    className={`fm-chip edit-chip edit-chip--date${!DATE_SHORTCUTS.some((s) => dayOffsetStr(s.offset) === dateText) ? ' fm-chip--active' : ''}`}
                   >
-                    {shortcut.label}
+                    {!DATE_SHORTCUTS.some((s) => dayOffsetStr(s.offset) === dateText)
+                      ? dateText.slice(5)
+                      : '其他 📅'}
                   </View>
-                ))}
+                </Picker>
               </View>
-              <Picker
-                className='edit-date-picker'
-                // end 锁到今天：后端对 recordDate 晚于今天是硬拒 2002（写入必须拦，
-                // 与查询的 endDate 收敛不同口径，见 AGENTS.md 同步点第 9 条）
-                end={todayStr()}
-                mode='date'
-                value={dateText}
-                onChange={(event) => setDateText(event.detail.value)}
-              >
-                <View className='fm-picker edit-date-value'>
-                  <Text className='edit-date-value__text'>{dateText}</Text>
-                  <Text className='edit-date-value__hint'>选其他日期</Text>
-                </View>
-              </Picker>
+              {dateText !== todayStr() ? (
+                <View className='fm-weak edit-tip'>已选日期：{dateText}</View>
+              ) : null}
             </View>
           )}
         </View>
@@ -424,7 +431,8 @@ export default function RecordEditPage() {
           <Input
             className='fm-input'
             maxlength={FOOD_NAME_MAX}
-            placeholder='吃了什么'
+            placeholder='吃了什么，例如：牛肉燕麦饭'
+            placeholderClass='fm-placeholder'
             value={foodName}
             onInput={(event) => setFoodName(event.detail.value)}
           />
@@ -432,16 +440,16 @@ export default function RecordEditPage() {
 
         <View className='fm-field'>
           <View className='fm-field__label'>热量（kcal）</View>
-          <View className='calories-row'>
+          <View className='calories-box'>
             <Input
-              className='fm-input calories-input'
+              className='calories-input'
               placeholder='例如 320'
-              // type='number' 只决定键盘样式，不保证值合法也不保证是整数，
-              // 所以 buildValues 里的 Number.isInteger 与上下限一道都不能省
+              placeholderClass='calories-placeholder'
               type='number'
               value={caloriesText}
               onInput={(event) => setCaloriesText(event.detail.value)}
             />
+            <Text className='calories-unit'>kcal</Text>
             {caloriesText ? (
               // 清空按钮只在有内容时出现：空框旁边放一个「清空」是噪声
               <View className='calories-clear' onClick={() => setCaloriesText('')}>
@@ -460,7 +468,7 @@ export default function RecordEditPage() {
 
         <View className='fm-field'>
           <View className='fm-field__label edit-label'>
-            备注（选填）
+            <Text>备注（选填）</Text>
             {/* 实时字数而不是只在超长时报：remark 是全页唯一允许“清空”的字段，
                 用户需要看得见边界在哪（REMARK_MAX ↔ 后端 @Size(max = 500)） */}
             <Text className='counter'>
@@ -470,9 +478,10 @@ export default function RecordEditPage() {
             </Text>
           </View>
           <Textarea
-            className='fm-input fm-textarea'
+            className='fm-textarea'
             maxlength={REMARK_MAX}
-            placeholder='口味、份量、和谁一起吃'
+            placeholder='口味、份量、和谁一起吃等'
+            placeholderClass='fm-placeholder'
             value={remark}
             onInput={(event) => setRemark(event.detail.value)}
           />

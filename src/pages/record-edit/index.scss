@@ -2,100 +2,148 @@
 
 .edit-page {
   /* 底部固定操作栏会挡住内容，这里多留一截 */
-  padding-bottom: 240px;
-  padding-bottom: calc(240px + env(safe-area-inset-bottom));
+  padding-bottom: 220px;
+  padding-bottom: calc(220px + env(safe-area-inset-bottom));
 }
 
-/* 胶囊里的餐次色点 */
+/* 胶囊里的餐次色点与文字完美水平+垂直居中 */
 .edit-chip {
   align-items: center;
+  box-sizing: border-box;
   display: flex;
   font-size: 26px;
+  height: 72px;
+  justify-content: center;
+  line-height: 1;
+  margin-bottom: 0;
   min-width: 0;
+  padding: 0 6px;
 }
 
 .edit-chip__dot {
   border-radius: 50%;
+  flex-shrink: 0;
   height: 14px;
-  margin-right: 12px;
+  margin-right: 10px;
   width: 14px;
+}
+
+.edit-date-picker-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.edit-chip--date {
+  width: 100%;
 }
 
 .edit-tip {
   margin-top: 14px;
 }
 
-.edit-date-picker {
-  display: block;
-  margin-top: 20px;
-}
-
-.edit-date-value {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-.edit-date-value__text {
-  font-size: 28px;
-  font-weight: 500;
-}
-
-.edit-date-value__hint {
+/* 占位符统一样式 */
+.fm-placeholder {
   color: var(--fm-text-tertiary);
-  font-size: 22px;
+  font-size: 28px;
+  font-weight: 400;
 }
 
-/* 热量：输入框 + 清空 */
-.calories-row {
+/* 热量输入整块容器：输入框 + 单位 + 清空按钮 */
+.calories-box {
   align-items: center;
+  background-color: var(--fm-surface-muted);
+  border: 2px solid transparent;
+  border-radius: var(--fm-radius);
+  box-sizing: border-box;
   display: flex;
+  height: 96px;
+  padding: 0 24px;
+}
+
+.calories-box:focus-within {
+  background-color: var(--fm-surface);
+  border-color: var(--fm-primary);
 }
 
 .calories-input {
+  background: transparent;
+  border: none;
+  box-sizing: border-box;
+  color: var(--fm-text);
   flex: 1;
-  font-size: 40px;
+  font-size: 38px;
   font-weight: 600;
-  letter-spacing: -1px;
+  height: 92px;
+  letter-spacing: -0.5px;
+  line-height: 92px;
+  padding: 0;
+}
+
+.calories-placeholder {
+  color: var(--fm-text-tertiary);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.calories-unit {
+  color: var(--fm-text-secondary);
+  font-size: 26px;
+  font-weight: 500;
+  margin-left: 12px;
 }
 
 .calories-clear {
   color: var(--fm-text-tertiary);
   flex-shrink: 0;
   font-size: 24px;
-  margin-left: 20px;
-  padding: 12px 4px;
+  margin-left: 16px;
+  padding: 8px 12px;
 }
 
 .calories-steps {
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
 .calorie-step {
-  font-size: 25px;
-  line-height: 64px;
+  align-items: center;
+  display: flex;
+  font-size: 24px;
+  font-weight: 500;
+  height: 64px;
+  justify-content: center;
+  line-height: 1;
+  margin-bottom: 0;
   min-width: 0;
-  padding: 0 30px;
+  padding: 0;
 }
 
 .fm-textarea {
-  min-height: 190px;
+  background-color: var(--fm-surface-muted);
+  border: 2px solid transparent;
+  border-radius: var(--fm-radius);
+  box-sizing: border-box;
+  font-size: 28px;
+  line-height: 1.5;
+  min-height: 170px;
+  padding: 20px 24px;
+  width: 100%;
 }
 
-/* 备注行：标题居左、计数器靠右，用 flex 而不是 float（小程序里 float 行高计算不稳定） */
+/* 备注行：标题居左、计数器靠右 */
 .edit-label {
   align-items: center;
   display: flex;
+  justify-content: space-between;
 }
 
 .counter {
   color: var(--fm-text-tertiary);
   font-size: 22px;
   font-weight: 400;
-  margin-left: auto;
 }
 
-/* 删除：弱化成一行文字按钮，避免和主按钮抢注意力 */
+/* 删除：弱化成一行文字按钮 */
 .edit-delete {
   color: var(--fm-accent-danger);
   font-size: 26px;
@@ -108,15 +156,14 @@
   background: var(--fm-fade-to-bg);
   bottom: 0;
   left: 0;
-  padding: 32px 32px 28px;
-  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  padding: 24px 32px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
   position: fixed;
   right: 0;
   z-index: 20;
 }
 
-/* 草稿丢失（路由带 id 但本地没有原记录）时的兜底页：
-   只给返回入口，不给表单，避免把「修改」误提交成「新增一条重复记录」 */
+/* 草稿丢失兜底 */
 .draft-lost {
   align-items: center;
   display: flex;
