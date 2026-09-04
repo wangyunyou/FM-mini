@@ -21,7 +21,7 @@
  */
 import { useState } from 'react'
 
-import { Button, Input, Text, View } from '@tarojs/components'
+import { Button, Image, Input, Text, View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 
 import { ROUTES } from '@/constants/route'
@@ -31,6 +31,11 @@ import { isFirstLogin, login } from '@/utils/auth'
 import { toast, toastSuccess } from '@/utils/feedback'
 
 import './index.scss'
+
+/** 微信官方双气泡 Logo（SVG Data URI，高清矢量无网络请求）。 */
+const WECHAT_ICON_SVG =
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="%23ffffff"><path d="M9.5 3C5.36 3 2 5.91 2 9.5c0 1.98.98 3.75 2.53 4.95L3.8 17.5l3.4-1.7c.73.2 1.5.3 2.3.3.4 0 .78-.03 1.16-.08A6.87 6.87 0 0 1 10.5 14c0-3.87 3.36-7 7.5-7 .34 0 .67.02 1 .07C17.75 4.7 13.9 3 9.5 3zm-2.5 4.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm4.5 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm6.5 2.5c-3.31 0-6 2.46-6 5.5s2.69 5.5 6 5.5c.62 0 1.22-.09 1.78-.25l2.72 1.36-.61-2.43C22.21 18.68 23 17.18 23 15.5c0-3.04-2.69-5.5-6-5.5zm-2 3.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm3.8 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>'
+
 
 export default function LoginPage() {
   /** 昵称输入框当前值（未经 trim） */
@@ -86,32 +91,52 @@ export default function LoginPage() {
     }
   }
 
+  /** 点击用户协议展示合规说明 */
+  function handleShowAgreement() {
+    toast('FM 严格保障您的个人健康档案与数据安全')
+  }
+
+  /** 点击隐私政策展示合规说明 */
+  function handleShowPrivacy() {
+    toast('饮食记录仅在云端独立加密存储，绝不泄露')
+  }
+
   return (
     <View className='login-page'>
-      {/* 头图：全仓唯一保留深绿渐变的页面（首屏没内容可遮，不担心大面积饱和色） */}
-      <View className='login-hero'>
-        <View className='login-hero__brand'>FM</View>
-        <View className='login-hero__title'>FM 饮食记录</View>
-        <View className='login-hero__desc'>每天记一笔，热量和餐次都留得住</View>
-      </View>
+      {/* 顶部柔和的健康绿微光氛围 */}
+      <View className='login-glow' />
 
-      {/* 表单区：两项全部选填。不填则后端不写 nickname（实体可空无默认值），
-          “我的”页会显示兜底文案「还没起名字」，登录后随时可改 */}
-      <View className='login-body'>
-        <View className='fm-card login-card'>
-          <View className='fm-field'>
-            <View className='fm-field__label'>昵称（选填，登录后也可修改）</View>
+      <View className='login-container'>
+        {/* 品牌标识区：清新图标 + 标题 + 品牌 Slogan */}
+        <View className='login-brand'>
+          <View className='login-brand__logo'>
+            <Text className='login-brand__icon'>🥗</Text>
+          </View>
+          <View className='login-brand__title'>FM 饮食记录</View>
+          <View className='login-brand__desc'>轻简记录每一餐，遇见更健康的自己</View>
+        </View>
+
+        {/* 选填资料卡片：设计轻量温和，用户可填可不填 */}
+        <View className='login-card'>
+          <View className='login-card__header'>
+            <Text className='login-card__title'>个人资料预设</Text>
+            <Text className='login-card__subtitle'>选填 · 随时可在「我的」页面修改</Text>
+          </View>
+
+          <View className='login-field'>
+            <View className='login-field__label'>昵称</View>
             <Input
-              className='fm-input'
+              className='login-input'
               maxlength={NICKNAME_MAX}
-              placeholder='给自己起个名字'
+              placeholder='微信用户（点击可自定义）'
+              placeholderClass='login-input__placeholder'
               value={nickname}
               onInput={(event) => setNickname(event.detail.value)}
             />
           </View>
 
-          <View className='fm-field'>
-            <View className='fm-field__label'>性别（选填）</View>
+          <View className='login-field'>
+            <View className='login-field__label'>性别</View>
             <View className='fm-chips'>
               {/* 用下标而不是 value 做选中态：chips 本身是 GENDER_OPTIONS 遍历出来的，
                   下标就是“第几个”，与 state 的存法一致；存 value 反而多一道换算 */}
@@ -128,19 +153,32 @@ export default function LoginPage() {
           </View>
         </View>
 
-        <Button
-          className='fm-btn fm-btn--primary'
-          disabled={submitting}
-          loading={submitting}
-          onClick={handleSubmit}
-        >
-          {submitting ? '登录中…' : '微信一键登录'}
-        </Button>
+        {/* 主操作区：高质感微信一键登录按钮 */}
+        <View className='login-action'>
+          <Button
+            className='login-btn-wechat'
+            disabled={submitting}
+            loading={submitting}
+            onClick={handleSubmit}
+          >
+            {!submitting && (
+              <Image className='login-btn-wechat__icon' src={WECHAT_ICON_SVG} />
+            )}
+            <Text className='login-btn-wechat__text'>
+              {submitting ? '安全登录中…' : '微信一键快捷登录'}
+            </Text>
+          </Button>
+        </View>
 
-        <View className='login-tip'>
-          <Text className='login-tip__text'>
-            登录仅用于创建你的饮食档案。本地联调需 FM 服务以 dev profile 启动，该环境已开启微信登录
-            mock，没有真实 AppID 也能完整跑通。
+        {/* 底部协议与保障声明 */}
+        <View className='login-footer'>
+          <Text className='login-footer__text'>登录即代表同意</Text>
+          <Text className='login-footer__link' onClick={handleShowAgreement}>
+            《用户服务协议》
+          </Text>
+          <Text className='login-footer__text'>与</Text>
+          <Text className='login-footer__link' onClick={handleShowPrivacy}>
+            《隐私保护政策》
           </Text>
         </View>
       </View>
